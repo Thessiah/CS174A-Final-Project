@@ -86,7 +86,7 @@ var bullet_damage = 2;
 var material_bullet = vec4(1.0, 1.0, 1.0, 1.0);
 var light_bullet = vec4(1.0, 1.0, 1.0, 1.0);
 
-var scale_gun = vec3(0.1, 0.1, .8); 
+var scale_gun = vec3(0.1, 0.1, 1.0); 
 var material_gun = vec4(1.0, 1.0, 1.0, 1.0);
 var light_gun = vec4(.0, .0, .0, .0);
 
@@ -560,7 +560,7 @@ function drawText() {
 	      var textX, textY;
 
 	      var text = [];
-	      var textToWrite = "Health: " + healthAmount;
+	      var textToWrite = "Health: " + player_health;
 	
 	      var maxWidth = 256;
 	
@@ -715,16 +715,18 @@ window.addEventListener('keydown', function(event){
 		}
 	}
 	if (event.keyCode == 13){		//enter
-		gameMode = selectColor;
+		if (gameMode != 4){
+			gameMode = selectColor;
+		}
 	}
 	if (event.keyCode == 8){		//backspace
-		if (gameMode != 0 && gameMode != 1){
+		if (gameMode != 0 && gameMode != 1 && gameMode != 4){
 			gameMode = 0;			//if we are on the options or rules page, backspace will return us to main menu
 		}
 	}
 	if (event.keyCode == 72){		//'h' for testing
-		healthAmount -= 5;
-		if (healthAmount == 0){
+		player_health -= 5;
+		if (player_health == 0){
 			gameMode = 4;
 		}
 		grenAmount += 1;
@@ -752,196 +754,122 @@ window.addEventListener('keydown', function(event){
 function render()
 {
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-	//if (gameMode == 0){
-	var delta = timer.getElapsedTime() / 1000;
-	time += delta;
-	counter += delta;
+	if (gameMode == 0){
 	
 	useTexture = 1.0;
 	
 	//MENUS
-	
-		// var mvMatrix = viewMatrix;
-		// mvMatrix = mult(translate(0, 1.0, 0), mvMatrix);
+		 var mvMatrix = viewMatrix;
+		 mvMatrix = mult(translate(0, 1.0, 0), mvMatrix);
 
-		// //mvMatrix = mult(viewMatrix, rotate(time * omega, [0, 1, 0]));
+		 if (selectColor == 1){
+			 startTexture.image.src = "./Images/startSelected.jpg";
+		 }
+		 else{
+			 startTexture.image.src = "./Images/start.jpg";
+		 }
 
-		// if (selectColor == 1){
-			// startTexture.image.src = "./Images/startSelected.jpg";
-		// }
-		// else{
-			// startTexture.image.src = "./Images/start.jpg";
-		// }
+		 gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(mvMatrix));
+		 gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(orthoMatrix));
 
-		// gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(mvMatrix));
-		// gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(orthoMatrix));
+		 gl.activeTexture(gl.TEXTURE0);
+		 gl.bindTexture(gl.TEXTURE_2D, startTexture);
 
-		// gl.activeTexture(gl.TEXTURE0);
-		// gl.bindTexture(gl.TEXTURE_2D, startTexture);
+		 gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
+		 gl.uniform1f(UNIFORM_shininess,  shininess);
+		 gl.uniform1i(UNIFORM_sampler, 0);
+		 gl.uniform1f(UNIFORM_useTexture,  useTexture);
 
-		// gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
-		// gl.uniform1f(UNIFORM_shininess,  shininess);
-		// gl.uniform1i(UNIFORM_sampler, 0);
-		// gl.uniform1f(UNIFORM_useTexture,  useTexture);
+		 gl.drawArrays( gl.TRIANGLES, 0, 8);
 
-		// gl.drawArrays( gl.TRIANGLES, 0, 36);
+		 projectionMatrix = perspective(90, 1, 0.001, 1000);
 
-		// mvMatrix = viewMatrix;
-		// mvMatrix = mult(translate(0, 0, 0), mvMatrix);
+		 mvMatrix = viewMatrix;
+		 mvMatrix = mult(translate(0, 0, 0), mvMatrix);
 
-		// if (selectColor == 2){
-			// optionTexture.image.src = "./Images/optionsSelected.jpg";
-		// }
-		// else{
-			// optionTexture.image.src = "./Images/options.jpg";
-		// }
+		 if (selectColor == 2){
+			 optionTexture.image.src = "./Images/optionsSelected.jpg";
+		 }
+		 else{
+			 optionTexture.image.src = "./Images/options.jpg";
+		 }
 
-		// gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(mvMatrix));
-		// gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(orthoMatrix));
+		 gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(mvMatrix));
+		 gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(orthoMatrix));
 
-		// gl.activeTexture(gl.TEXTURE0);
-		// gl.bindTexture(gl.TEXTURE_2D, optionTexture);
+		 gl.activeTexture(gl.TEXTURE0);
+		 gl.bindTexture(gl.TEXTURE_2D, optionTexture);
 
-		// gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
-		// gl.uniform1f(UNIFORM_shininess,  shininess);
-		// gl.uniform1i(UNIFORM_sampler, 0);
-		// gl.uniform1f(UNIFORM_useTexture,  useTexture);
+		 gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
+		 gl.uniform1f(UNIFORM_shininess,  shininess);
+		 gl.uniform1i(UNIFORM_sampler, 0);
+		 gl.uniform1f(UNIFORM_useTexture,  useTexture);
 
-		// gl.drawArrays( gl.TRIANGLES, 0, 36);
+		 gl.drawArrays( gl.TRIANGLES, 0, 8);
 
-		// mvMatrix = viewMatrix;
-		// mvMatrix = mult(translate(0, -1, 0), mvMatrix);
+		 mvMatrix = viewMatrix;
+		 mvMatrix = mult(translate(0, -1, 0), mvMatrix);
 
-		// if (selectColor == 3){
-			// rulesTexture.image.src = "./Images/rulesSelected.jpg";
-		// }
-		// else{
-			// rulesTexture.image.src = "./Images/rules.jpg";
-		// }
+		 if (selectColor == 3){
+			 rulesTexture.image.src = "./Images/rulesSelected.jpg";
+		 }
+		 else{
+			 rulesTexture.image.src = "./Images/rules.jpg";
+		 }
 
-		// gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(mvMatrix));
-		// gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(orthoMatrix));
+		 gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(mvMatrix));
+		 gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(orthoMatrix));
 
-		// gl.activeTexture(gl.TEXTURE0);
-		// gl.bindTexture(gl.TEXTURE_2D, rulesTexture);
+		 gl.activeTexture(gl.TEXTURE0);
+		 gl.bindTexture(gl.TEXTURE_2D, rulesTexture);
 
-		// gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
-		// gl.uniform1f(UNIFORM_shininess,  shininess);
-		// gl.uniform1i(UNIFORM_sampler, 0);
-		// gl.uniform1f(UNIFORM_useTexture,  useTexture);
+		 gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
+		 gl.uniform1f(UNIFORM_shininess,  shininess);
+		 gl.uniform1i(UNIFORM_sampler, 0);
+		 gl.uniform1f(UNIFORM_useTexture,  useTexture);
 
-		// gl.drawArrays( gl.TRIANGLES, 0, 36);
-	// }
-	// else if (gameMode == 1){		//start
-		// mvMatrix = viewMatrix;
-		// mvMatrix = mult(mvMatrix, scale(-1, 1, 1));
-		// mvMatrix = mult(translate(-1.5, -1.5, 0), mvMatrix);
+		 gl.drawArrays( gl.TRIANGLES, 0, 8);
+	 }
+	else if (gameMode == 1){		//
+		useTexture = 1.0;
+		var delta = timer.getElapsedTime() / 1000;
+	time += delta;
+	counter += delta;
+		mvMatrix = viewMatrix;
+		 mvMatrix = mult(mvMatrix, scale(-1, 1, 1));
+		 mvMatrix = mult(translate(-1.5, -1.5, 0), mvMatrix);
 
-		// gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(mvMatrix));
-		// gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(orthoMatrix));
+		 gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(mvMatrix));
+		 gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(orthoMatrix));
 
-		// gl.activeTexture(gl.TEXTURE0);
-		// gl.bindTexture(gl.TEXTURE_2D, canvasTexture);
+		 gl.activeTexture(gl.TEXTURE0);
+		 gl.bindTexture(gl.TEXTURE_2D, canvasTexture);
 
-		// gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
-		// gl.uniform1f(UNIFORM_shininess,  shininess);
-		// gl.uniform1i(UNIFORM_sampler, 0);
-		// gl.uniform1f(UNIFORM_useTexture,  useTexture);
+		 gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
+		 gl.uniform1f(UNIFORM_shininess,  shininess);
+		 gl.uniform1i(UNIFORM_sampler, 0);
+		 gl.uniform1f(UNIFORM_useTexture,  useTexture);
 
-		// gl.drawArrays( gl.TRIANGLES, 0, 36);
+		 gl.drawArrays( gl.TRIANGLES, 0, 8);
 
-		// mvMatrix = viewMatrix;
-		// mvMatrix = mult(mvMatrix, scale(-1, 1, 1));
-		// mvMatrix = mult(translate(-0.5, -1.5, 0), mvMatrix);
+		 mvMatrix = viewMatrix;
+		 mvMatrix = mult(mvMatrix, scale(-1, 1, 1));
+		 mvMatrix = mult(translate(-0.5, -1.5, 0), mvMatrix);
 
-		// gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(mvMatrix));
-		// gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(orthoMatrix));
+		 gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(mvMatrix));
+		 gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(orthoMatrix));
 
-		// gl.activeTexture(gl.TEXTURE0);
-		// gl.bindTexture(gl.TEXTURE_2D, grenTexture);
+		 gl.activeTexture(gl.TEXTURE0);
+		 gl.bindTexture(gl.TEXTURE_2D, grenTexture);
 
-		// gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
-		// gl.uniform1f(UNIFORM_shininess,  shininess);
-		// gl.uniform1i(UNIFORM_sampler, 0);
-		// gl.uniform1f(UNIFORM_useTexture,  useTexture);
+		 gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
+		 gl.uniform1f(UNIFORM_shininess,  shininess);
+		 gl.uniform1i(UNIFORM_sampler, 0);
+		 gl.uniform1f(UNIFORM_useTexture,  useTexture);
 
-		// gl.drawArrays( gl.TRIANGLES, 0, 36);
+		 gl.drawArrays( gl.TRIANGLES, 0, 8);
 
-	// }
-	// else if (gameMode == 2){		//options
-		// mvMatrix = viewMatrix;
-		// mvMatrix = mult(mvMatrix, scale(3.5, 3.5, 1));
-
-		// gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(mvMatrix));
-		// gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(orthoMatrix));
-
-		// gl.activeTexture(gl.TEXTURE0);
-		// gl.bindTexture(gl.TEXTURE_2D, jokeTexture);
-
-		// gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
-		// gl.uniform1f(UNIFORM_shininess,  shininess);
-		// gl.uniform1i(UNIFORM_sampler, 0);
-		// gl.uniform1f(UNIFORM_useTexture,  useTexture);
-
-		// gl.drawArrays( gl.TRIANGLES, 0, 36);
-	// }
-	// else if (gameMode == 3){		//rules
-	// }
-	// else if (gameMode == 4){		//ded
-		// mvMatrix = viewMatrix;
-
-		// gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(mvMatrix));
-		// gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(orthoMatrix));
-
-		// gl.activeTexture(gl.TEXTURE0);
-		// gl.bindTexture(gl.TEXTURE_2D, deadTexture);
-
-		// gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
-		// gl.uniform1f(UNIFORM_shininess,  shininess);
-		// gl.uniform1i(UNIFORM_sampler, 0);
-		// gl.uniform1f(UNIFORM_useTexture,  useTexture);
-
-		// gl.drawArrays( gl.TRIANGLES, 0, 36);
-	// }
-	
-	var ctm = mat4();
-		
-		ctm = mult(ctm, viewMatrix);
-		// ctm = mult(ctm, translate(translate_camera[i]));
-		// ctm = mult(ctm, translate(translate_enemies[i]));
-		ctm = mult(ctm, scale(scale_skybox));
-		
-		//ctm = mult(ctm, rotate(time*omega, [2, 3, 1]));
-
-		gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(ctm));
-		gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(projectionMatrix));
-		
-		gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, myTexture);
-	
-		gl.uniform4fv(UNIFORM_ambientProduct,  flatten(ambientProduct));
-		gl.uniform4fv(UNIFORM_diffuseProduct,  flatten(diffuseProduct));
-		gl.uniform4fv(UNIFORM_specularProduct, flatten(specularProduct));
-		gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
-		gl.uniform1f(UNIFORM_shininess,  shininess);
-		gl.uniform1i(UNIFORM_sampler, 0);
-		gl.uniform1f(UNIFORM_useTexture,  useTexture);
-
-		gl.drawArrays( gl.TRIANGLES, 0, 36);
-		
-		// gl.activeTexture(gl.TEXTURE0);
-        // gl.bindTexture(gl.TEXTURE_2D, myTexture[1]);
-	
-		// gl.uniform4fv(UNIFORM_ambientProduct,  flatten(ambientProduct));
-		// gl.uniform4fv(UNIFORM_diffuseProduct,  flatten(diffuseProduct));
-		// gl.uniform4fv(UNIFORM_specularProduct, flatten(specularProduct));
-		// gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
-		// gl.uniform1f(UNIFORM_shininess,  shininess);
-		// gl.uniform1f(UNIFORM_useTexture,  useTexture);
-
-		// gl.drawArrays( gl.TRIANGLES, 0, 36);
-	
-	useTexture = 0.0;
+		 	useTexture = 0.0;
 	ambientProduct = mult(lightAmbient, materialAmbient);
 	//var ctm = mat4()
 	for(var i = 0; i < num_enemies; i++)//loop through all the enemies and do the proper transformations and frame checks
@@ -989,7 +917,17 @@ function render()
 		if(translate_enemies[i][2] + length * scale_enemies[2] >= 1.8 || translate_enemies[i][2] - length * scale_enemies[2] <= -10){
       		kill_enemy(i);//remove enemy when they hit the player
 			player_health -= enemy_damage;//have the player take damage based on enemy damage
+			if (player_health <= 0){
+				gameMode = 4;
+			}
 			i--;//reloop
+			drawText();
+			gl.bindTexture(gl.TEXTURE_2D, canvasTexture);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, document.getElementById('textureCanvas')); // This is the important line!
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+		gl.generateMipmap(gl.TEXTURE_2D);
+		gl.bindTexture(gl.TEXTURE_2D, null);
 		}
 	}
 	//useTexture = 0.0;
@@ -1105,8 +1043,85 @@ function render()
     document.getElementById('player_score').innerHTML = player_score;
 	document.getElementById('player_health').innerHTML = player_health;
 	document.getElementById('level').innerHTML = level;
+	 }
+	 else if (gameMode == 2){		//options
+		 useTexture = 1.0;
+		 mvMatrix = viewMatrix;
+		 mvMatrix = mult(mvMatrix, scale(3.5, 3.5, 3.5));
+		 mvMatrix = mult(translate(0, 1.0, 0), mvMatrix);
 
+		 gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(mvMatrix));
+		 gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(orthoMatrix));
+
+		 gl.activeTexture(gl.TEXTURE0);
+		 gl.bindTexture(gl.TEXTURE_2D, jokeTexture);
+
+		 gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
+		 gl.uniform1f(UNIFORM_shininess,  shininess);
+		 gl.uniform1i(UNIFORM_sampler, 0);
+		 gl.uniform1f(UNIFORM_useTexture,  useTexture);
+
+		 gl.drawArrays( gl.TRIANGLES, 0, 8);
+	 }
+	 else if (gameMode == 3){		//rules
+		 useTexture = 1.0;
+	 }
+	 else if (gameMode == 4){		//ded
+		 useTexture = 1.0;
+		 mvMatrix = viewMatrix;
+
+		 gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(mvMatrix));
+		 gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(orthoMatrix));
+
+		 gl.activeTexture(gl.TEXTURE0);
+		 gl.bindTexture(gl.TEXTURE_2D, deadTexture);
+
+		 gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
+		 gl.uniform1f(UNIFORM_shininess,  shininess);
+		 gl.uniform1i(UNIFORM_sampler, 0);
+		 gl.uniform1f(UNIFORM_useTexture,  useTexture);
+
+		 gl.drawArrays( gl.TRIANGLES, 0, 36);
+	 }
+	useTexture = 1.0;
+	var ctm = mat4();
+		
+		ctm = mult(ctm, viewMatrix);
+		// ctm = mult(ctm, translate(translate_camera[i]));
+		// ctm = mult(ctm, translate(translate_enemies[i]));
+		//ctm = mult(translate(0, 5.5, 0), ctm);
+		ctm = mult(ctm, scale(scale_skybox));
+		
+		//ctm = mult(ctm, rotate(time*omega, [2, 3, 1]));
+
+		gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(ctm));
+		gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(projectionMatrix));
+		
+		gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, myTexture);
 	
+		gl.uniform4fv(UNIFORM_ambientProduct,  flatten(ambientProduct));
+		gl.uniform4fv(UNIFORM_diffuseProduct,  flatten(diffuseProduct));
+		gl.uniform4fv(UNIFORM_specularProduct, flatten(specularProduct));
+		gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
+		gl.uniform1f(UNIFORM_shininess,  shininess);
+		gl.uniform1i(UNIFORM_sampler, 0);
+		gl.uniform1f(UNIFORM_useTexture,  useTexture);
+
+		gl.drawArrays( gl.TRIANGLES, 0, 36);
+		
+		// gl.activeTexture(gl.TEXTURE0);
+        // gl.bindTexture(gl.TEXTURE_2D, myTexture[1]);
+	
+		// gl.uniform4fv(UNIFORM_ambientProduct,  flatten(ambientProduct));
+		// gl.uniform4fv(UNIFORM_diffuseProduct,  flatten(diffuseProduct));
+		// gl.uniform4fv(UNIFORM_specularProduct, flatten(specularProduct));
+		// gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
+		// gl.uniform1f(UNIFORM_shininess,  shininess);
+		// gl.uniform1f(UNIFORM_useTexture,  useTexture);
+
+		// gl.drawArrays( gl.TRIANGLES, 0, 36);
+		
     window.requestAnimFrame( render );
 }
 
