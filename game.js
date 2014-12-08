@@ -466,6 +466,8 @@ function kill_grenade(i)
 	material_grenades.splice(i, 1);
 	AABB_grenades.splice(i, 1);
 	num_grenades--;
+	drawText2();
+
 }
 
 function spawn_enemy()//spawn an enemy with random movement
@@ -1000,6 +1002,15 @@ window.addEventListener('keyup', function(event)
 		grenAmount--;
 		grenade_distance = .5;
 		s_down = false;
+		drawText2();
+		grenTexture = gl.createTexture();
+	gl.pixelStorei(gl.UNPACK_FLIP_X_WEBGL, true);
+    gl.bindTexture(gl.TEXTURE_2D, grenTexture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, document.getElementById('textureCanvas2')); // This is the important line!
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+    gl.generateMipmap(gl.TEXTURE_2D);
+	gl.bindTexture(gl.TEXTURE_2D, null);
 	}
 }, true);
 
