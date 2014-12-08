@@ -56,6 +56,10 @@ var translate_enemies = [];
 var direction_enemies = [];
 var health_enemies = [];
 var speed_enemies = vec3(0.05, 0.05, 0.05);
+var switch_enemies = [];
+var counter_enemies = [];
+var AABB_enemies = [];
+var AABB_enemies_prev = [];
 
 var enemy_damage = 5;
 var enemy_value = 5;
@@ -69,10 +73,24 @@ var num_bullets = 0;
 var bullet_damage = 2;
 var material_bullet = vec4(1.0, 1.0, 1.0, 1.0);
 var light_bullet = vec4(1.0, 1.0, 1.0, 1.0);
+var AABB_bullets = [];
 
 var scale_gun = vec3(0.1, 0.1, 1.0); 
 var material_gun = vec4(1.0, 1.0, 1.0, 1.0);
 var light_gun = vec4(.0, .0, .0, .0);
+
+var translate_grenades = [];
+var velocity_grenades = [];
+var rotate_grenades = [];
+var switch_grenades = [];
+var scale_grenades = [];
+var material_grenades = [];
+var timer_grenades = [];
+var num_grenades = 0;
+var grenade_distance = .5;
+var light_grenade = vec4(1.0, 1.0, 1.0, 1.0);
+var grenade_damage = 100;
+var AABB_grenades = [];
 
 var translate_player = vec3(0, 0, 0);
 
@@ -114,12 +132,16 @@ var level = 1;
 
 var a_down = false;
 var d_down = false;
+var s_down = false;
+
+var gravity_direction = vec3(0.0, -1.0, 0.0);
+var gravity_magnitude = 9.8;
 
 var selectColor = 1;
 var gameMode = 0;
 
 var healthAmount = 100;
-var grenAmount = 0;
+var grenAmount = 5;
 //cube points
     var cube_points = [];
     var cube_normals = [];
@@ -275,7 +297,7 @@ window.onload = function init()
 	var x = e.clientX;
 	var y = e.clientY;
 	//degree = (x - canvas.width / 2)
-	degree =2*(x - canvas.width/2)/canvas.width * 40;
+	degree =2*(x - canvas.width/2)/canvas.width * 60;
 	rotation += degree - prev_dir;
 	prev_dir = degree;
 	
@@ -292,9 +314,6 @@ window.onload = function init()
 	if(e.button == 0)
 	{
 		shoot();
-	}
-	if(e.button == 1)
-	{
 	}
     };
     render();
@@ -405,24 +424,58 @@ function shoot()//generate a bullet to be shot
 {
 	translate_bullets[num_bullets] = subtract(vec3(0, 0, 0), translate_player);//starting location
 	direction_bullets[num_bullets] = vec3(-.5 * Math.tan(-degree * Math.PI / 180), 0, -.5);//bullet direction
+	AABB_bullets[num_bullets] = calculate_AABB(translate_bullets[num_bullets], length * scale_bullets[0]);
 	num_bullets++;
 }
 function kill_bullet(i)//remove bullet actor
 {
 	translate_bullets.splice(i, 1); //remove data from the arrays
 	direction_bullets.splice(i, 1);
+	AABB_bullets.splice(i, 1);
 	num_bullets--;
+}
+
+function throw_grenade(distance)
+{
+	translate_grenades[num_grenades] = subtract(vec3(0, .6, 1.4), translate_player);
+	velocity_grenades[num_grenades] = vec3(distance * Math.tan(-degree * Math.PI / 180), -distance * 2, distance);
+	rotate_grenades[num_grenades] = degree;
+	switch_grenades[num_grenades] = 0;
+	timer_grenades[num_grenades] = 0;
+	scale_grenades[num_grenades] = vec3(.1, .1, .1);
+	material_grenades[num_grenades] = vec4(0.0, .8, .2, 1.0);
+	AABB_grenades[num_grenades] = calculate_AABB(translate_grenades[num_grenades], length * scale_grenades[num_grenades][0]);
+	num_grenades++;
+}
+
+function kill_grenade(i)
+{
+	translate_grenades.splice(i, 1);
+	velocity_grenades.splice(i, 1);
+	rotate_grenades.splice(i, 1);
+	switch_grenades.splice(i, 1);
+	timer_grenades.splice(i, 1);
+	scale_grenades.splice(i, 1);
+	material_grenades.splice(i, 1);
+	AABB_grenades.splice(i, 1);
+	num_grenades--;
 }
 
 function spawn_enemy()//spawn an enemy with random movement
 {
 	var curr = translate_enemies.length;
 	translate_enemies[curr] = vec3(Math.random() * 3 - 1.5, 0, -5);//starting location with a random x position
+	//translate_enemies[curr] = vec3(0, 0, -5);
 	direction_enemies[curr] = vec3(Math.random() / 2 + .2, 0, Math.random() / 4 + .1);//enemy direction with a random x and y direction
+	//direction_enemies[curr] = vec3(0, 0, Math.random() / 4 + .1);
 	if(Math.random() >= .5)//make the initial x direction 50/50
 	{
 		direction_enemies[curr][0] *= -1;
 	}
+	switch_enemies[curr] = true;
+	counter_enemies[curr] = 0;
+	AABB_enemies[curr] = calculate_AABB(translate_enemies[curr], length * scale_enemies[0]);
+	AABB_enemies_prev[curr] = AABB_enemies[curr];
 	health_enemies[curr] = enemy_health; //set health to the predetermined value
 	num_enemies++;
 }
@@ -431,6 +484,10 @@ function kill_enemy(i)//remove enemy actor
 	translate_enemies.splice(i, 1);//remove data from the arrays
 	direction_enemies.splice(i, 1);
 	health_enemies.splice(i, 1);
+	switch_enemies.splice(i, 1);
+	counter_enemies.splice(i, 1);
+	AABB_enemies.splice(i, 1);
+	AABB_enemies_prev.splice(i, 1);
 	num_enemies--;
 }
 function damage_enemy(i, damage)//damage enemy actor
@@ -443,16 +500,109 @@ function damage_enemy(i, damage)//damage enemy actor
 	}
 }
 
-function check_collision(bullet, enemy)
+function check_collision(AABB1, AABB2)
 {
-	var xd = translate_enemies[enemy][0] - translate_bullets[bullet][0];
-	var zd = translate_enemies[enemy][2] - translate_bullets[bullet][2];
-	var distance = Math.sqrt(xd * xd + zd * zd);//calculate distance between bullet and enemy
-	if(distance <=  length * scale_enemies[0] * 2)//if within distance
+	if(AABB_collision(AABB1, AABB2))
 	{
-		kill_bullet(bullet);//remove bullet
-		damage_enemy(enemy, bullet_damage);//damage enemy
 		return true;
+	}
+	else
+	{
+		return false;
+	}
+}
+
+function check_bounce(enemy1, enemy2)
+{
+	if(check_collision(AABB_enemies[enemy1], AABB_enemies[enemy2]))
+	{
+		if(counter_enemies[enemy1] >= 20 || counter_enemies[enemy2] >= 20)
+		{
+			if(AABB_enemies_prev[enemy1][1][0] < AABB_enemies[enemy2][0][0] &&
+			   AABB_enemies[enemy1][1][0] >= AABB_enemies[enemy2][0][0]) 
+			{
+				direction_enemies[enemy1][0] *= -1;
+				direction_enemies[enemy2][0] *= -1;
+			}
+			else if(AABB_enemies_prev[enemy1][0][0] < AABB_enemies[enemy2][1][0]&&
+			        AABB_enemies[enemy1][0][0] >= AABB_enemies[enemy2][1][0])
+			{
+
+				direction_enemies[enemy1][0] *= -1;
+				direction_enemies[enemy2][0] *= -1;
+			}
+			else if(AABB_enemies_prev[enemy1][1][1] < AABB_enemies[enemy2][0][1] &&
+			        AABB_enemies[enemy1][1][1] < AABB_enemies[enemy2][0][1])
+			{
+				direction_enemies[enemy1][2] *= -1;
+				direction_enemies[enemy2][2] += direction_enemies[enemy1][2];
+				
+			}
+			else if(AABB_enemies_prev[enemy1][0][1] < AABB_enemies[enemy2][1][1] &&
+			        AABB_enemies[enemy1][0][1] < AABB_enemies[enemy2][1][1])
+			{
+				direction_enemies[enemy1][2] += direction_enemies[enemy2][2];
+				direction_enemies[enemy2][2] *= -1;
+				//direction_enemies[enemy2][2] *= -1;
+			}
+			counter_enemies[enemy1] = 0;
+			counter_enemies[enemy2] = 0;
+		}
+	}
+	if(switch_enemies[enemy1])
+	{
+		counter_enemies[enemy1]++;
+		switch_enemies[enemy1] = false;
+	}
+	if(switch_enemies[enemy2])
+	{
+		counter_enemies[enemy2]++;
+		switch_enemies[enemy2] = false;
+	}
+}
+
+
+function AABB_collision(a, b)
+{
+	return !(a[1][0] < b[0][0] ||
+	         b[1][0] < a[0][0] ||
+			 a[1][1] < b[0][1] ||
+			 b[1][1] < a[0][1]);
+}
+
+function calculate_AABB(position, width)
+{
+	 return [[position[0] - width, position[2] - width],
+	        [position[0] + width, position[2] + width]];
+}
+
+function add1(v1, v2)
+{
+	return vec3(v1[0] + v2[0], v1[1] + v2[1], v1[2] + v2[2]);
+}
+
+function update_grenade(delta, i)
+{
+	var gravity = scale1(gravity_magnitude, gravity_direction);
+	if(!(length1(velocity_grenades[i]) < .05 && (translate_grenades[i][1] - length * scale_grenades[i][0]) < 0))
+	{
+		velocity_grenades[i] = add1(velocity_grenades[i], scale1(delta, gravity));
+		translate_grenades[i] = add1(translate_grenades[i], scale1(delta, velocity_grenades[i]));
+		if(translate_grenades[i][1] <= length * scale_grenades[i][0] && switch_grenades[i] > 1)
+		{
+			velocity_grenades[i] = scale1(.6, velocity_grenades[i]);
+			velocity_grenades[i][1] = -1 * velocity_grenades[i][1];
+			switch_grenades[i] = 0;
+		}
+		else
+		{
+			switch_grenades[i]++;
+		}
+		return true;
+	}
+	else
+	{
+		return false;
 	}
 }
 
@@ -821,6 +971,10 @@ window.addEventListener('keydown', function(event){
 	{
 		d_down = true;
 	}
+	if(event.keyCode == 83 && grenAmount > 0)
+	{
+		s_down = true;
+	}
 });
 
 window.addEventListener('keyup', function(event)
@@ -832,6 +986,13 @@ window.addEventListener('keyup', function(event)
 	if(event.keyCode ==  68)
 	{
 		d_down = false;
+	}
+	if(event.keyCode == 83 && grenAmount > 0)
+	{
+		throw_grenade(grenade_distance);
+		grenAmount--;
+		grenade_distance = .5;
+		s_down = false;
 	}
 }, true);
 
@@ -1077,8 +1238,8 @@ function render()
 		render_Skybox_Textures();
 		
 		var delta = timer.getElapsedTime() / 1000;
-	time += delta;
-	counter += delta;
+		time += delta;
+		counter += delta;
 		mvMatrix = viewMatrix;
 		 mvMatrix = mult(mvMatrix, scale(-1, 1, 1));
 		 mvMatrix = mult(translate(-1.5, -1.5, 0), mvMatrix);
@@ -1124,13 +1285,28 @@ function render()
 	{
 		translate_player = subtract(translate_player, vec3(.02, 0, 0));
 	}
-	
+	if(s_down == true && grenade_distance <= 2.5)
+	{
+		grenade_distance += .05;
+	}
 	for(var i = 0; i < num_enemies; i++)//loop through all the enemies and do the proper transformations and frame checks
 	{
 		//x-axis canvas boundaries
-		if(translate_enemies[i][0] >= 2 || translate_enemies[i][0] <= -2 ){
-        direction_enemies[i][0] = -(direction_enemies[i][0] + 0.01);//have enemy bounce when they hit x boundaries
+		if(translate_enemies[i][0] >= 2.5 || translate_enemies[i][0] <= -2.5 ){
+        direction_enemies[i][0] = -(direction_enemies[i][0]);//have enemy bounce when they hit x boundaries
+		if(translate_enemies[i][0] >= 2.5)
+		{
+			translate_enemies[i][0] = 2.5;
+		}
+		else
+		{
+			translate_enemies[i][0] = -2.5;
+		}
 		//direction_enemies[i][2] += 0.05;
+		}
+		if(translate_enemies[i][2] < -5)
+		{
+			direction_enemies[i][2] *= -1;
 		}
 		
 		//y-axis canvas boundaries(if the enemies move in the y-axis
@@ -1168,7 +1344,12 @@ function render()
 		gl.uniform1f(UNIFORM_useTexture,  useTexture);
 
 		gl.drawArrays( gl.TRIANGLES, 0, 36);
-		
+		AABB_enemies_prev[i] = AABB_enemies[i];
+		AABB_enemies[i] = calculate_AABB(translate_enemies[i], length * scale_enemies[0]);
+		for(var j = i + 1; j < num_enemies; j++)
+		{
+			check_bounce(i, j);
+		}
 		//z-axis canvas boundaries
 		if(translate_enemies[i][2] + length * scale_enemies[2] >= 1.8 || translate_enemies[i][2] - length * scale_enemies[2] <= -10){
       		kill_enemy(i);//remove enemy when they hit the player
@@ -1185,6 +1366,10 @@ function render()
 		gl.generateMipmap(gl.TEXTURE_2D);
 		gl.bindTexture(gl.TEXTURE_2D, null);
 		}
+	}
+	for(var i = 0; i < num_enemies; i++)
+	{
+		switch_enemies[i] = true;
 	}
 	//useTexture = 0.0;
 	ambientProduct = mult(light_bullet, material_bullet);
@@ -1219,10 +1404,13 @@ function render()
 		}
 		else
 		{
+			AABB_bullets[i] = calculate_AABB(translate_bullets[i], length * scale_bullets[0]);
 			for(var j = 0; j < num_enemies; j++)
 			{
-				if(check_collision(i, j))//otherwise check the bullet with every enemy for a collision
+				if(check_collision(AABB_bullets[i], AABB_enemies[j]))//otherwise check the bullet with every enemy for a collision
 				{
+					kill_bullet(i);//remove bullet
+					damage_enemy(j, bullet_damage);//damage enemy
 					i--;
 					break;//if we get a successful collision then stop checking enemies because the bullet is dead and reloop
 					
@@ -1230,24 +1418,64 @@ function render()
 			}
 		}
 	}
-/*	ctm = mat4();
+
+	for(var i = 0; i < num_grenades; i++)
+	{
+		ambientProduct = mult(light_grenade, material_grenades[i]);
+		ctm = mat4();
 		ctm = mult(ctm, viewMatrix);
-		ctm = mult(ctm, translate(vec3(0, 0, 0)));
-		ctm = mult(ctm, translate(temp));
-		ctm = mult(ctm, scale(scale_enemies));
-		ctm = mult(ctm, rotate(time*omega, [2, 3, 1]));
+		ctm = mult(ctm, translate(vec3(0, 0, 1.4)));
+		ctm = mult(ctm, rotate(degree, [0, 1,0]));
+		ctm = mult(ctm, translate(vec3(0, 0, -1.4)));
+		ctm = mult(ctm, translate(add(translate_grenades[i], translate_player)));
+		ctm = mult(ctm, rotate(-rotate_grenades[i], [0, 1, 0]));
+		ctm = mult(ctm, scale(scale_grenades[i]));
 
 		gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(ctm));
 		gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(projectionMatrix));
-
+		
 		gl.uniform4fv(UNIFORM_ambientProduct,  flatten(ambientProduct));
 		gl.uniform4fv(UNIFORM_diffuseProduct,  flatten(diffuseProduct));
 		gl.uniform4fv(UNIFORM_specularProduct, flatten(specularProduct));
 		gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
 		gl.uniform1f(UNIFORM_shininess,  shininess);
+		gl.uniform1f(UNIFORM_useTexture,  useTexture);
 
-		gl.drawArrays( gl.TRIANGLES, 36, 3072);	
-	*/
+		gl.drawArrays( gl.TRIANGLES, 0, 36);
+
+		
+		if(!update_grenade(-delta, i))
+		{
+			if(timer_grenades[i] == 6)
+			{
+				material_grenades[i] = vec4(1, 1, 0, 0);
+				scale_grenades[i] = vec3(1, 1, 1);
+			}
+			if(timer_grenades[i] >= 6)
+			{
+				material_grenades[i][1] -= .1;
+				AABB_grenades[i] = calculate_AABB(add(translate_grenades[i], vec3(0, 0, -1.4)), length * scale_grenades[i][0]);
+				for(var j = 0; j < num_enemies; j++)
+				{
+					if(check_collision(AABB_grenades[i], AABB_enemies[j]))
+					{
+						damage_enemy(j, grenade_damage);
+					}
+				}
+			}
+			if(timer_grenades[i] <= 8)
+			{
+				scale_grenades[i] = add(scale_grenades[i], vec3(.2, .2, .2));
+			}
+			if(timer_grenades[i] >= 20)
+			{
+				kill_grenade(i);
+				i--;
+			}
+			timer_grenades[i]++;
+		}
+	}
+
 	var hours = Math.floor(time.toFixed(1)/3600);
 	var minutes = Math.floor((time.toFixed(1)/60) % 60);
 	var seconds = Math.floor(time.toFixed(1) % 60);
@@ -1262,7 +1490,10 @@ function render()
 	//ALL VALUES ARE SUBJECT TO CHANGE AND ARE CURRENTLY FOR TESTING PURPOSES
 	enemy_damage = 4 + level;
 	enemy_value = 4 + level;
-	enemy_health = 1 + level;
+	if(enemy_health <= 6)
+	{
+		enemy_health = 1 + level / 2;
+	}
 	
 	if(time >= 15.0 * level)
 	{
