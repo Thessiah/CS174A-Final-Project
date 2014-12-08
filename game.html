@@ -27,10 +27,10 @@
 		vec3 light = (adjustLight * vec4(lightPosition, 1.0)).xyz;
     		//light position in camera space
 
-    		vec3 L = normalize(lightPosition - pos);
+    		vec3 L = normalize(light - pos);
     		vec3 E = normalize(-pos);
     		vec3 H = normalize(L + E);
-    		vec3 N = normalize(mvMatrix * vec4(vNormal, 0.0)).xyz;
+    		vec3 N = normalize(mvMatrix * vec4(vNormal, -1.0)).xyz;
 
     		vec4 ambient = ambientProduct;
     		float kd = abs(dot(L, N));
