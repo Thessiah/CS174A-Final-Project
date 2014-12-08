@@ -329,6 +329,9 @@ window.onload = function init()
 	//translate_gun[0] = degree;
     
     canvas.onmousedown = function(e){ //shoot on click - can also be used as a debug tool
+	var audio = document.getElementById("shotSound");
+	audio.currentTime = 0;
+	audio.play();
 	//temp = vec3(0, 0, 0);
 	//spawn_enemy();
 	//alert(counter);
@@ -1646,6 +1649,9 @@ function render()
 			if(timer_grenades[i] <= 8)
 			{
 				scale_grenades[i] = add(scale_grenades[i], vec3(.2, .2, .2));
+			}
+			if (timer_grenades[i] >= 8){
+				document.getElementById("grenadeSound").play();
 			}
 			if(timer_grenades[i] >= 20)
 			{
