@@ -1160,6 +1160,7 @@ function render_Skybox_Textures()
 		ctm = mult(ctm, scale(scale_skybox));
 		
 		ctm = mult(ctm, rotate(90, vec3(0, -1, 0)));
+		ctm = mult(rotate(degree, vec3(0, 1, 0)), ctm);
 
 		gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(ctm));
 		gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(projectionMatrix));
@@ -1186,6 +1187,7 @@ function render_Skybox_Textures()
 		ctm = mult(ctm, scale(scale_skybox));
 		
 		ctm = mult(ctm, rotate(90, [0, 1, 0]));
+		ctm = mult(rotate(degree, vec3(0, 1, 0)), ctm);
 
 		gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(ctm));
 		gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(projectionMatrix));
@@ -1210,6 +1212,7 @@ function render_Skybox_Textures()
 		ctm = mult(ctm, scale(scale_skybox));
 		
 		ctm = mult(ctm, rotate(90, [-1, 0, 0]));
+		ctm = mult(rotate(degree, vec3(0, 1, 0)), ctm);
 
 		gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(ctm));
 		gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(projectionMatrix));
@@ -1235,6 +1238,7 @@ function render_Skybox_Textures()
 		ctm = mult(ctm, scale(scale_skybox));
 		
 		ctm = mult(ctm, rotate(90, vec3(1, 0, 0)));
+		ctm = mult(rotate(degree, vec3(0, 1, 0)), ctm);
 
 		gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(ctm));
 		gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(projectionMatrix));
@@ -1261,6 +1265,7 @@ function render_Skybox_Textures()
 		ctm = mult(ctm, viewMatrix);
 		ctm = mult(ctm, translate(translate_skybox[4]));
 		ctm = mult(ctm, scale(scale_skybox));
+		ctm = mult(rotate(degree, vec3(0, 1, 0)), ctm);
 		
 		gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(ctm));
 		gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(projectionMatrix));
@@ -1285,6 +1290,7 @@ function render_Skybox_Textures()
 		ctm = mult(ctm, viewMatrix);
 		ctm = mult(ctm, translate(translate_skybox[5]));
 		ctm = mult(ctm, scale(scale_skybox));
+		ctm = mult(rotate(degree, vec3(0, 1, 0)), ctm);
 		
 		gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(ctm));
 		gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(projectionMatrix));
