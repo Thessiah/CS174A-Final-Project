@@ -48,7 +48,6 @@ var scale_enemies = vec3(0.2, 0.2, 0.2);
 var scale_skybox = vec3(10, 10, 10);
 var translate_gun = vec3(0.0, 0.0, 1.7);
 var translate_enemies = [];
-var translate_camera = [];
 var direction_enemies = [];
 var health_enemies = [];
 var speed_enemies = vec3(0.05, 0.05, 0.05);
@@ -354,10 +353,6 @@ window.onload = function init()
 	var y = e.clientY;
 	//degree = (x - canvas.width / 2)
 	degree =2*(x - canvas.width/2)/canvas.width * 40;
-	for(var i = 0; i < num_enemies; i++)
-	{
-		turn(translate_camera[i], translate_enemies[i], degree);
-	}
 	rotation += degree - prev_dir;
 	prev_dir = degree;
 	//translate_gun[0] = degree;
