@@ -117,6 +117,8 @@ var canvasTexture;
 var grenTexture;
 var deadTexture;
 var rulesetTexture;
+var deadTexture2;
+var deadscoreTexture;
 
 var x_test = 1.0;
 var y_test = 1.0;
@@ -219,6 +221,7 @@ window.onload = function init()
 {
 	drawText();  
 	drawText2();
+	drawText3();
 	
     canvas = document.getElementById( "gl-canvas" );
     gl = WebGLUtils.setupWebGL( canvas );
@@ -724,19 +727,40 @@ function menuTextures() //generate textures for menus
 
 	deadTexture.image.src = "./Images/dead.jpg";
 
+	deadTexture2 = gl.createTexture();
+    deadTexture2.image = new Image();
+    deadTexture2.image.onload = function(){
+	gl.bindTexture(gl.TEXTURE_2D, deadTexture2);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, deadTexture2.image);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	gl.generateMipmap(gl.TEXTURE_2D);
+	gl.bindTexture(gl.TEXTURE_2D, null);
+    }
+
+	deadTexture2.image.src = "./Images/death2.jpg";
+
 	canvasTexture = gl.createTexture();
-	gl.pixelStorei(gl.UNPACK_FLIP_X_WEBGL, true);
     	gl.bindTexture(gl.TEXTURE_2D, canvasTexture);
-    	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, document.getElementById('textureCanvas')); // This is the important line!
+    	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, document.getElementById('textureCanvas'));
     	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
     	gl.generateMipmap(gl.TEXTURE_2D);
 	gl.bindTexture(gl.TEXTURE_2D, null);
 
 	grenTexture = gl.createTexture();
-	gl.pixelStorei(gl.UNPACK_FLIP_X_WEBGL, true);
     gl.bindTexture(gl.TEXTURE_2D, grenTexture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, document.getElementById('textureCanvas2')); // This is the important line!
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, document.getElementById('textureCanvas2'));
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+    gl.generateMipmap(gl.TEXTURE_2D);
+	gl.bindTexture(gl.TEXTURE_2D, null);
+
+	deadscoreTexture = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, deadscoreTexture);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, document.getElementById('textureCanvas3'));
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
     gl.generateMipmap(gl.TEXTURE_2D);
@@ -933,6 +957,75 @@ function drawText2(){
 	      }
 }
 
+function drawText3() {
+	      var canvasX, canvasY;
+	      var textX, textY;
+
+	      var text = [];
+	      var textToWrite = "Your Score: " + player_score;
+	
+	      var maxWidth = 256;
+	
+	      var squareTexture = 1;
+	
+	      var textHeight = 256;
+	      var textAlignment = "center";
+	      var textColour = "white"
+	      var fontFamily = "monospace";
+	
+	      var backgroundColour = "black";
+	
+	      var canvas = document.getElementById('textureCanvas3');
+	      var ctx = canvas.getContext('2d');
+	
+	      ctx.font = textHeight+"px "+fontFamily;
+	      if (maxWidth && measureText(ctx, textToWrite) > maxWidth ) {
+		      maxWidth = createMultilineText(ctx, textToWrite, maxWidth, text);
+		      canvasX = getPowerOfTwo(maxWidth);
+	      } else {
+		      text.push(textToWrite);
+		      canvasX = getPowerOfTwo(ctx.measureText(textToWrite).width);
+	      }
+	      canvasY = getPowerOfTwo(textHeight*(text.length+1)); 
+	      if(squareTexture) {
+		      (canvasX > canvasY) ? canvasY = canvasX : canvasX = canvasY;
+	      }
+
+	      canvas.width = canvasX;
+	      canvas.height = canvasY;
+	
+	      switch(textAlignment) {
+		      case "left":
+			      textX = 0;
+			      break;
+		      case "center":
+			      textX = canvasX/2;
+			      break;
+		      case "right":
+			      textX = canvasX;
+			      break;
+	      }
+	      textY = canvasY/2;
+	
+	      ctx.fillStyle = backgroundColour;
+	      ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+	
+	      ctx.fillStyle = textColour;
+	      ctx.textAlign = textAlignment;
+	
+	      ctx.textBaseline = 'middle'; // top, middle, bottom
+	      ctx.font = textHeight+"px "+fontFamily;
+	
+	      var offset = (canvasY - textHeight*(text.length+1)) * 0.5;
+	
+	      for(var i = 0; i < text.length; i++) {
+		      if(text.length > 1) {
+			      textY = (i+1)*textHeight + offset;
+		      }
+		      ctx.fillText(text[i], textX,  textY);
+	      }
+      }
+
 window.addEventListener('keydown', function(event){
 	if(event.keyCode == 73){		//i, move in
 		myTexture.image.src = "./Images/test2.jpg";
@@ -973,7 +1066,6 @@ window.addEventListener('keydown', function(event){
 		drawText();
 		drawText2();
 		canvasTexture = gl.createTexture();
-		gl.pixelStorei(gl.UNPACK_FLIP_X_WEBGL, true);
 		gl.bindTexture(gl.TEXTURE_2D, canvasTexture);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, document.getElementById('textureCanvas')); // This is the important line!
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -981,7 +1073,6 @@ window.addEventListener('keydown', function(event){
 		gl.generateMipmap(gl.TEXTURE_2D);
 		gl.bindTexture(gl.TEXTURE_2D, null);
 		grenTexture = gl.createTexture();
-		gl.pixelStorei(gl.UNPACK_FLIP_X_WEBGL, true);
 		gl.bindTexture(gl.TEXTURE_2D, grenTexture);
 		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, document.getElementById('textureCanvas2')); // This is the important line!
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -1622,6 +1713,7 @@ function render()
 		 useTexture = 1.0;
 		 render_Skybox_Textures();
 		 mvMatrix = viewMatrix;
+		 mvMatrix = mult(translate(0, 1.0, 0), mvMatrix);
 
 		 gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(mvMatrix));
 		 gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(orthoMatrix));
@@ -1634,7 +1726,49 @@ function render()
 		 gl.uniform1i(UNIFORM_sampler, 0);
 		 gl.uniform1f(UNIFORM_useTexture,  useTexture);
 
-		 gl.drawArrays( gl.TRIANGLES, 0, 36);
+		 gl.drawArrays( gl.TRIANGLES, 0, 8);
+
+		 drawText3();
+
+		 deadscoreTexture = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, deadscoreTexture);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, document.getElementById('textureCanvas3'));
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+		gl.generateMipmap(gl.TEXTURE_2D);
+		gl.bindTexture(gl.TEXTURE_2D, null);
+
+		 mvMatrix = viewMatrix;
+		 mvMatrix = mult(mvMatrix, scale(-1, 1, 1));
+
+		 gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(mvMatrix));
+		 gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(orthoMatrix));
+
+		 gl.activeTexture(gl.TEXTURE0);
+		 gl.bindTexture(gl.TEXTURE_2D, deadscoreTexture);
+
+		 gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
+		 gl.uniform1f(UNIFORM_shininess,  shininess);
+		 gl.uniform1i(UNIFORM_sampler, 0);
+		 gl.uniform1f(UNIFORM_useTexture,  useTexture);
+
+		 gl.drawArrays( gl.TRIANGLES, 0, 8);
+
+		 mvMatrix = viewMatrix;
+		 mvMatrix = mult(translate(0, -1.0, 0), mvMatrix);
+
+		 gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(mvMatrix));
+		 gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(orthoMatrix));
+
+		 gl.activeTexture(gl.TEXTURE0);
+		 gl.bindTexture(gl.TEXTURE_2D, deadTexture2);
+
+		 gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
+		 gl.uniform1f(UNIFORM_shininess,  shininess);
+		 gl.uniform1i(UNIFORM_sampler, 0);
+		 gl.uniform1f(UNIFORM_useTexture,  useTexture);
+
+		 gl.drawArrays( gl.TRIANGLES, 0, 8);
 	 }
 	useTexture = 1.0;
 		
