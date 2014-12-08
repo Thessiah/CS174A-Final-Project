@@ -116,6 +116,7 @@ var jokeTexture;
 var canvasTexture;
 var grenTexture;
 var deadTexture;
+var rulesetTexture;
 
 var x_test = 1.0;
 var y_test = 1.0;
@@ -692,6 +693,21 @@ function menuTextures() //generate textures for menus
     }
 
 	rulesTexture.image.src = "./Images/rules.jpg";
+
+	rulesetTexture = gl.createTexture();
+    rulesetTexture.image = new Image();
+    rulesetTexture.image.onload = function(){
+	gl.bindTexture(gl.TEXTURE_2D, rulesetTexture);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, rulesetTexture.image);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	gl.generateMipmap(gl.TEXTURE_2D);
+	gl.bindTexture(gl.TEXTURE_2D, null);
+    }
+
+	rulesetTexture.image.src = "./Images/ruleset.jpg";
 
 	deadTexture = gl.createTexture();
     deadTexture.image = new Image();
@@ -1584,6 +1600,23 @@ function render()
 	 else if (gameMode == 3){		//rules
 		 useTexture = 1.0;
 		 render_Skybox_Textures();
+
+		 mvMatrix = viewMatrix;
+		 mvMatrix = mult(mvMatrix, scale(3.5, 3.5, 3.5));
+		 mvMatrix = mult(translate(0, 0.5, 0), mvMatrix);
+
+		 gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(mvMatrix));
+		 gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(orthoMatrix));
+
+		 gl.activeTexture(gl.TEXTURE0);
+		 gl.bindTexture(gl.TEXTURE_2D, rulesetTexture);
+
+		 gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
+		 gl.uniform1f(UNIFORM_shininess,  shininess);
+		 gl.uniform1i(UNIFORM_sampler, 0);
+		 gl.uniform1f(UNIFORM_useTexture,  useTexture);
+
+		 gl.drawArrays( gl.TRIANGLES, 0, 8);
 	 }
 	 else if (gameMode == 4){		//ded
 		 useTexture = 1.0;
