@@ -16,6 +16,8 @@ var UNIFORM_shininess;
 var ATTRIBUTE_position;
 var ATTRIBUTE_normal;
 var UNIFORM_useTexture;
+var UNIFORM_adjustLight;
+var UNIFORM_darken;
 
 var positionBuffer; 
 var normalBuffer;
@@ -75,11 +77,11 @@ var light_gun = vec4(.0, .0, .0, .0);
 var translate_player = vec3(0, 0, 0);
 
 var translate_skybox = [vec3(s, 0, 0),
-						vec3(-s, 0, 0),
-						vec3(0, 0, 0),
-						vec3(0, t, 0),
-						vec3(0, 0, 0),
-						vec3(0, 0, -s)];
+			vec3(-s, 0, 0),
+			vec3(0, 0, 0),
+			vec3(0, t, 0),
+			vec3(0, 0, 0),
+			vec3(0, 0, -s)];
 var skybox_PX;
 var skybox_NX;
 var skybox_PY;
@@ -118,6 +120,68 @@ var gameMode = 0;
 
 var healthAmount = 100;
 var grenAmount = 0;
+//cube points
+    var cube_points = [];
+    var cube_normals = [];
+    var cube_uv = [];
+///////////////////////////////////////////////////////////
+var va = vec4(0.0, 0.0, -1.0, 1.0);
+var vb = vec4(0.0, 0.942809, 0.333333, 1.0);
+var vc = vec4(-0.816497, -0.471405, 0.333333, 1.0);
+var vd = vec4(0.816497, -0.471405, 0.333333, 1.0);
+
+var texCoord = [
+	vec2(0,0),
+	vec2(0,1),
+	vec2(1, 1)
+];
+var sun_points = [];
+var sun_normals = [];
+var sun_texCoordsArray = [];
+generateSun(4, 0, sun_points, sun_normals, sun_texCoordsArray);
+
+var sun_g = [];
+var green = 0.3;
+for (var i = 0; i < 360; i++){
+	if (i < 90 || (i > 180 && i < 270))
+		green+= 0.01;
+	else
+		green -= 0.01;
+	sun_g.push(green);
+	if (sun_g[i] > 1)
+		sun_g[i] = 1;
+}
+var sun_values={
+	lightPosition: vec3(0.0, 0.0, 0.0),
+	ctm: mat4(),
+	lm: mat4(),
+	sun_theta: 0.0,
+	sun_green: sun_g,
+	materialAmbient: vec4( 1.0, 0.3, 0.0, 1.0 ),
+	materialDiffuse: vec4( 1.0, 0.3, 0.0, 1.0 ),
+	materialSpecular: vec4( 1.0, 0.3, 0.0, 1.0 ),
+	materialShininess: 100.0,
+	lightAmbient: vec4(0.3, 0.3, 0.3, 1.0),
+	lightDiffuse: vec4(0.6, 0.6, 0.6, 1.0),
+	lightSpecular: vec4(1.0, 1.0, 1.0, 1.0),
+	projection: perspective(30,1,-1,1),
+	diffuse: 0.3,
+	spec: 0.3
+}
+var lm = mat4();
+var darkenSky = [];
+var dark_value = 0.01;
+for (var i = 0; i < 360; i++){
+	if (i < 36 || i > 180-36)
+		dark_value = 0.01;
+	else if (i < 90)
+		dark_value = Math.min(1.0, (dark_value+0.02));
+	else
+		dark_value = Math.max(0.01, (dark_value-0.02));
+	darkenSky.push(dark_value);
+}
+//////////////////////////////////////////////////////////////////////
+
 
 window.onload = function init()
 {
@@ -144,17 +208,7 @@ window.onload = function init()
         vec3( -length,  -length, -length )  //vertex 7   
     ];
 
-    var points = [];
-    var normals = [];
-	var uv = [];
-    Cube(vertices, points, normals, uv);
-	
-	var va = vec4(0.0, 0.0, -1.0,1);
-	var vb = vec4(0.0, 0.942809, 0.333333, 1);
-	var vc = vec4(-0.816497, -0.471405, 0.333333, 1);
-	var vd = vec4(0.816497, -0.471405, 0.333333,1);
-
-	tetrahedron(va, vb, vc, vd, points, normals, 4);
+    Cube(vertices, cube_points, cube_normals, cube_uv);
 	
 	//SKYBOX
 	skybox_texture();
@@ -165,15 +219,15 @@ window.onload = function init()
 
     positionBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, positionBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(cube_points), gl.STATIC_DRAW );
 
     normalBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, normalBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(normals), gl.STATIC_DRAW );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(cube_normals), gl.STATIC_DRAW );
 	
-	uvBuffer = gl.createBuffer();
+    uvBuffer = gl.createBuffer();
     gl.bindBuffer( gl.ARRAY_BUFFER, uvBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(uv), gl.STATIC_DRAW );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(cube_uv), gl.STATIC_DRAW );
 
     ATTRIBUTE_position = gl.getAttribLocation( program, "vPosition" );
     gl.enableVertexAttribArray( ATTRIBUTE_position );
@@ -202,6 +256,8 @@ window.onload = function init()
     UNIFORM_shininess = gl.getUniformLocation(program, "shininess");
 	UNIFORM_sampler = gl.getUniformLocation(program, "uSampler");
 	UNIFORM_useTexture = gl.getUniformLocation(program, "useTexture");
+	    UNIFORM_adjustLight = gl.getUniformLocation(program, "adjustLight");
+	    UNIFORM_darken = gl.getUniformLocation(program, "darken");
 
     viewMatrix = lookAt(eye, at, up);
     projectionMatrix = perspective(90, 1, 0.001, 1000);
@@ -446,7 +502,7 @@ function menuTextures() //generate textures for menus
     }
 
 	jokeTexture.image.src = "./Images/totallyavailableoptions.jpg";
-
+/*
 	HUDTexture = gl.createTexture();
     HUDTexture.image = new Image();
     HUDTexture.image.onload = function(){
@@ -461,7 +517,7 @@ function menuTextures() //generate textures for menus
     }
 
 	HUDTexture.image.src = "./Images/health.jpg";
-
+*/
 	rulesTexture = gl.createTexture();
     rulesTexture.image = new Image();
     rulesTexture.image.onload = function(){
@@ -494,11 +550,11 @@ function menuTextures() //generate textures for menus
 
 	canvasTexture = gl.createTexture();
 	gl.pixelStorei(gl.UNPACK_FLIP_X_WEBGL, true);
-    gl.bindTexture(gl.TEXTURE_2D, canvasTexture);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, document.getElementById('textureCanvas')); // This is the important line!
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
-    gl.generateMipmap(gl.TEXTURE_2D);
+    	gl.bindTexture(gl.TEXTURE_2D, canvasTexture);
+    	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, document.getElementById('textureCanvas')); // This is the important line!
+    	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+    	gl.generateMipmap(gl.TEXTURE_2D);
 	gl.bindTexture(gl.TEXTURE_2D, null);
 
 	grenTexture = gl.createTexture();
@@ -781,6 +837,7 @@ window.addEventListener('keyup', function(event)
 
 function render_Skybox_Textures()
 {
+		gl.uniform1f(UNIFORM_darken,  darkenSky[Math.floor(sun_values.sun_theta)%360]);
 	var ctm = mat4();
 	
 		//Skybox Right Side
@@ -920,7 +977,9 @@ function render_Skybox_Textures()
 		gl.uniform1i(UNIFORM_sampler, 0);
 		gl.uniform1f(UNIFORM_useTexture,  useTexture);
 
+
 		gl.drawArrays( gl.TRIANGLES, 0, 8);
+		gl.uniform1f(UNIFORM_darken,  1.0);
 		
 }
 
@@ -1005,6 +1064,14 @@ function render()
 		 gl.drawArrays( gl.TRIANGLES, 0, 8);
 	 }
 	else if (gameMode == 1){		//
+		////////////
+		//DRAW SUN
+		//
+		setup_sun(sun_values);
+		load_sun_to_GPU(sun_values);
+		gl.drawArrays( gl.TRIANGLES, 0, sun_points.length);
+		load_originals();
+		////////////
 		useTexture = 1.0;
 
 		render_Skybox_Textures();
@@ -1301,7 +1368,7 @@ function Quad( vertices, points, normals, v1, v2, v3, v4, normal, uv){
     normals.push(normal);
     normals.push(normal);
 	
-	uv.push(vec2(0,0));
+    uv.push(vec2(0,0));
     uv.push(vec2(1,0));
     uv.push(vec2(1,1));
     uv.push(vec2(0,0));
@@ -1315,7 +1382,7 @@ function Quad( vertices, points, normals, v1, v2, v3, v4, normal, uv){
     points.push(vertices[v4]);
     points.push(vertices[v2]);
 }
-
+/*
 function tetrahedron(a, b, c, d, points, normals, n)
 {
 	divideTriangle(a, b, c, points, normals, n);
@@ -1354,8 +1421,165 @@ function triangle(a, b, c, points, normals)
 	normals.push(negate(b));
 	normals.push(negate(c));
 
-	
 	points.push(a);
 	points.push(b);
 	points.push(c);
+}*/
+
+//sphere generation
+
+function triangle(a, b, c, flat, pointsArray, normalsArray, texCoordsArray){
+	var a3 = vec3(a);
+	var b3 = vec3(b);
+	var c3 = vec3(c);
+	if (flat){
+		var t1 = subtract(b, a);
+		var t2 = subtract(c, a);
+		var normal = normalize(cross(t1, t2));
+		normal = vec4(normal);
+		var normal3 = vec3(normal);
+
+		normalsArray.push(normal3);
+		normalsArray.push(normal3);
+		normalsArray.push(normal3);	
+	}
+	else{
+		normalsArray.push(a3);
+		normalsArray.push(b3);
+		normalsArray.push(c3);	
+	}
+	pointsArray.push(a3);
+	pointsArray.push(b3);
+	pointsArray.push(c3);
+
+	texCoordsArray.push(texCoord[0]);
+	texCoordsArray.push(texCoord[1]);
+	texCoordsArray.push(texCoord[2]);
+
+};
+
+function divideTriangle(a, b, c, count, flat, pointsArray, normalsArray, texCoordsArray){
+	if ( count > 0 ) {
+        	var ab = mix( a, b, 0.5);
+        	var ac = mix( a, c, 0.5);
+        	var bc = mix( b, c, 0.5);
+                
+        	ab = normalize(ab, true);
+        	ac = normalize(ac, true);
+        	bc = normalize(bc, true);
+                                
+        	divideTriangle( a, ab, ac, count - 1, flat, pointsArray, normalsArray, texCoordsArray);
+        	divideTriangle( ab, b, bc, count - 1, flat, pointsArray, normalsArray, texCoordsArray);
+       		divideTriangle( bc, c, ac, count - 1, flat, pointsArray, normalsArray, texCoordsArray);
+        	divideTriangle( ab, bc, ac, count - 1, flat, pointsArray, normalsArray, texCoordsArray);
+	}
+	else
+		triangle( a, b, c, flat, pointsArray, normalsArray, texCoordsArray);
+};
+
+function generateSphere(n, flat, pointsArray, normalsArray, texCoordsArray){
+	divideTriangle(va, vb, vc, n, flat, pointsArray, normalsArray, texCoordsArray);
+	divideTriangle(vd, vc, vb, n, flat, pointsArray, normalsArray, texCoordsArray);
+	divideTriangle(va, vd, vb, n, flat, pointsArray, normalsArray, texCoordsArray);
+	divideTriangle(va, vc, vd, n, flat, pointsArray, normalsArray, texCoordsArray);
+};
+
+
+function generateSun(n, flat, pointsArray, normalsArray, texCoordsArray){
+	generateSphere(n, flat, pointsArray, normalsArray, texCoordsArray)
+	for (var j = 0; j < normalsArray.length; j++){
+		normalsArray[j] = negate(normalsArray[j]);
+	}
+};
+
+function setup_sun(sun){
+	sun.materialAmbient = vec4( 1.0, sun.sun_green[Math.floor(sun.sun_theta)%360], 0.0, 1.0 );
+	sun.materialDiffuse = vec4( 1.0, sun.sun_green[Math.floor(sun.sun_theta)%360], 0.0, 1.0 );
+	sun.materialSpecular = vec4( 1.0, sun.sun_green[Math.floor(sun.sun_theta)%360], 0.0, 1.0 );
+
+	var translate_x = 11;
+	var translate_y = 0;
+	var translate_z = -30;
+	var translationMatrix = translate(translate_x, translate_y, translate_z);
+
+	if (sun.sun_theta >= 360)
+		sun.sun_theta = 0;
+	sun.sun_theta += 0.1;
+	var rotationMatrix = rotate(sun.sun_theta, vec3(0, 0, 1));
+
+	var ctm = mat4();
+	ctm = mult(translationMatrix, ctm);
+	ctm = mult(rotationMatrix, ctm);
+	ctm = mult(translate(0, -4, 0), ctm);
+	sun.ctm = ctm;
+
+	if (sun.sun_theta < 180 && sun.sun_theta > 35.9){
+		//slowly increase diffuse to 0.6
+		sun.diffuse = Math.min(0.6, sun.diffuse+0.01);
+		//slowly increase specular to 1.0
+		sun.spec = Math.min(1.0, sun.spec+0.01);
+	}
+	else if (sun.sun_theta >= 180-35.9){
+		//slowly decrease diffuse and specular to 0.3
+		sun.diffuse = Math.max(0.3, sun.diffuse-0.01);
+		sun.spec = Math.max(0.3, sun.spec-0.01);
+	}
+	var diffuse = sun.diffuse;
+	var spec = sun.spec;
+	sun.lightDiffuse = vec4(diffuse, diffuse, diffuse, 1.0);
+	sun.lightSpecular = vec4(spec, spec, spec, 1.0);
+
+	//adjust light position to sun position
+	var lm = mat4();
+	lm = mult(translationMatrix, lm);
+	lm = mult(rotationMatrix, lm);
+	lm = mult(translate(0, -4, 0), lm);
+	sun_values.lm = lm;
+}
+function load_sun_to_GPU(sun){
+		//points
+		gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, flatten(sun_points), gl.STATIC_DRAW);
+		gl.vertexAttribPointer( ATTRIBUTE_position, 3, gl.FLOAT, false, 0, 0 );
+
+		//normals
+		gl.bindBuffer( gl.ARRAY_BUFFER, normalBuffer);
+		gl.bufferData( gl.ARRAY_BUFFER, flatten(sun_normals), gl.STATIC_DRAW );
+		gl.vertexAttribPointer( ATTRIBUTE_normal, 3, gl.FLOAT, false, 0, 0 );
+
+		//lighting
+		gl.uniform3fv( UNIFORM_lightPosition, flatten(sun.lightPosition) );
+		
+		gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(sun.projection));
+
+		ambientProduct = mult(sun.lightAmbient, sun.materialAmbient);
+		diffuseProduct = mult(sun.lightDiffuse, sun.materialDiffuse);
+		specularProduct = mult(sun.lightSpecular, sun.materialSpecular);
+
+		gl.uniform4fv(UNIFORM_ambientProduct,  flatten(ambientProduct));
+		gl.uniform4fv(UNIFORM_diffuseProduct,  flatten(diffuseProduct));
+		gl.uniform4fv(UNIFORM_specularProduct, flatten(specularProduct));
+		
+		gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(sun.ctm));
+		gl.uniformMatrix4fv(UNIFORM_adjustLight, false, flatten(sun.lm));
+		
+		gl.uniform1f( UNIFORM_shininess, sun.materialShininess );
+		//texture
+		gl.bindBuffer( gl.ARRAY_BUFFER, uvBuffer );
+		gl.bufferData( gl.ARRAY_BUFFER, flatten(sun_texCoordsArray), gl.STATIC_DRAW );
+		gl.vertexAttribPointer( ATTRIBUTE_uv, 2, gl.FLOAT, false, 0, 0 );
+		//gl.enableVertexAttribArray( ATTRIBUTE_uv );
+		//gl.bindTexture( gl.TEXTURE_2D, blankTexture );
+		//gl.uniform1i(UNIFORM_sampler, 0);
+}
+function load_originals(){
+    gl.bindBuffer( gl.ARRAY_BUFFER, positionBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(cube_points), gl.STATIC_DRAW );
+    gl.vertexAttribPointer( ATTRIBUTE_position, 3, gl.FLOAT, false, 0, 0 );
+    gl.bindBuffer( gl.ARRAY_BUFFER, normalBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(cube_normals), gl.STATIC_DRAW );
+    gl.vertexAttribPointer( ATTRIBUTE_normal, 3, gl.FLOAT, false, 0, 0 );
+    gl.bindBuffer( gl.ARRAY_BUFFER, uvBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(cube_uv), gl.STATIC_DRAW );
+    gl.vertexAttribPointer( ATTRIBUTE_uv, 2, gl.FLOAT, false, 0, 0 );
 }
