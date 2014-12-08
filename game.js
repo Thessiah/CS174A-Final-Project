@@ -52,27 +52,7 @@ var translate_camera = [];
 var direction_enemies = [];
 var health_enemies = [];
 var speed_enemies = vec3(0.05, 0.05, 0.05);
-/*var translate_enemies = [vec3(0, 0, -5),
-						 vec3(0.5, 0, -5),
-						 vec3(-0.5, 0, -5),
-						 vec3(0.8, 0, -5),
-						 vec3(-0.8, 0, -5),
-						 vec3(-1, 0, -5)
-						];
-var translate_camera = [vec3(0, 0, 0),
-					    vec3(0, 0, 0),
-					    vec3(0, 0, 0),
-					    vec3(0, 0, 0),
-					    vec3(0, 0, 0),
-					    vec3(0, 0, 0)
-					   ];
-var direction_enemies = [vec3(0.0, 0.0, 0.5),
-						 vec3(0.0, 0.0, 0.3),
-						 vec3(-0.0, 0.0, 0.25),
-						 vec3(0.0, 0.0, 0.4),
-						 vec3(-0.0, 0.0, 0.35),
-						 vec3(0.0, 0.0, 0.2)
-						];*/
+
 var enemy_damage = 5;
 var enemy_value = 5;
 var enemy_health = 2;
@@ -89,6 +69,8 @@ var light_bullet = vec4(1.0, 1.0, 1.0, 1.0);
 var scale_gun = vec3(0.1, 0.1, 1.0); 
 var material_gun = vec4(1.0, 1.0, 1.0, 1.0);
 var light_gun = vec4(.0, .0, .0, .0);
+
+var translate_player = vec3(0, 0, 0);
 
 var myTexture;
 var startTexture;
@@ -112,6 +94,9 @@ var rotation = 0;
 var player_health = 100;
 var player_score = 0;
 var level = 1;
+
+var a_down = false;
+var d_down = false;
 
 var selectColor = 1;
 var gameMode = 0;
@@ -365,32 +350,30 @@ window.onload = function init()
 	}
 	
 	canvas.onmousemove = function(e){ //mouse controls - ignore - under construction
-		var x = e.clientX;
-		var y = e.clientY;
-		//degree = (x - canvas.width / 2)
-		degree =2*(x - canvas.width/2)/canvas.width;
-		for(var i = 0; i < num_enemies; i++)
-		{
-			//turn(translate_camera[i], translate_enemies[i], degree);
-		}
-		rotation += degree - prev_dir;
-		prev_dir = degree;
-		translate_gun[0] = degree;
+	var x = e.clientX;
+	var y = e.clientY;
+	//degree = (x - canvas.width / 2)
+	degree =2*(x - canvas.width/2)/canvas.width * 40;
+	for(var i = 0; i < num_enemies; i++)
+	{
+		turn(translate_camera[i], translate_enemies[i], degree);
+	}
+	rotation += degree - prev_dir;
+	prev_dir = degree;
+	//translate_gun[0] = degree;
     };
-	
-	canvas.onmousedown = function(e){ //shoot on click - can also be used as a debug tool
-		//temp = vec3(0, 0, 0);
-		//spawn_enemy();
-		//alert(counter);
+    canvas.onmousedown = function(e){ //shoot on click - can also be used as a debug tool
+	//temp = vec3(0, 0, 0);
+	//spawn_enemy();
+	//alert(counter);
+	if(e.button == 0)
+	{
 		shoot();
-	};
-	// document.onkeydown = function(e){
-	// if(e.keyCode == 82){
-						
-		// shoot();
-		// }						
-	// }
-					
+	}
+	if(e.button == 1)
+	{
+	}
+    };
     render();
 }
 
@@ -413,42 +396,10 @@ function skybox_texture(myTexture)
 	myTexture.image.src = "./Images/uclaBruin.jpg";
 }
 
-//ignore all the turn functions - under construction
-//---------//
-function turn(camera, translate, direction)
-{
-	var angle = Math.atan2(camera[2] + translate[2] , camera[0] + translate[0]); 
-	var r = Math.sqrt(Math.pow(camera[0] + translate[0], 2) + Math.pow(camera[2] + translate[2], 2)); 
-	angle -= Math.PI / 180 * (direction - prev_dir); //add 1 degree to the angle
-
-	camera[0] = Math.cos(angle) * r - translate[0];
-	camera[2] = Math.sin(angle) * r - translate[2];
-}
-
-function init_turn(camera, translate, direction)
-{
-	var angle = Math.atan2(camera[2] + translate[2] - 1.8 , camera[0] + translate[0]); 
-	var r = Math.sqrt(Math.pow(camera[0] + translate[0], 2) + Math.pow(camera[2] + translate[2] - 1.8, 2)); 
-	angle -= Math.PI / 180 * direction; //add 1 degree to the angle
-
-	camera[0] = Math.cos(angle) * r - translate[0];
-}
-
-function turn2(translate, direction) 
-{
-	var angle = Math.atan2(translate[2] - 1.8 , translate[0]);
-	var r = Math.sqrt(Math.pow(translate[0], 2) + Math.pow(translate[2] - 1.8, 2));
-	angle += Math.PI / 180 * (direction - prev_dir); //add 1 degree to the angle
-
-	translate[0] = Math.cos(angle) * r;
-	translate[2] = Math.sin(angle) * r + 1.8;
-}
-//---------//
-
 function shoot()//generate a bullet to be shot
 {
-	translate_bullets[num_bullets] = vec3(degree, 0, 1.8);//starting location
-	direction_bullets[num_bullets] = vec3(0, 0, -.5);//bullet direction
+	translate_bullets[num_bullets] = subtract(vec3(0, 0, 0), translate_player);//starting location
+	direction_bullets[num_bullets] = vec3(-.5 * Math.tan(-degree * Math.PI / 180), 0, -.5);//bullet direction
 	num_bullets++;
 }
 function kill_bullet(i)//remove bullet actor
@@ -462,8 +413,6 @@ function spawn_enemy()//spawn an enemy with random movement
 {
 	var curr = translate_enemies.length;
 	translate_enemies[curr] = vec3(Math.random() * 3 - 1.5, 0, -5);//starting location with a random x position
-	translate_camera[curr] = vec3(0,0,0);//ignore
-	init_turn(translate_camera[curr], translate_enemies[curr], degree);//ignore
 	direction_enemies[curr] = vec3(Math.random() / 2 + .2, 0, Math.random() / 4 + .1);//enemy direction with a random x and y direction
 	if(Math.random() >= .5)//make the initial x direction 50/50
 	{
@@ -475,7 +424,6 @@ function spawn_enemy()//spawn an enemy with random movement
 function kill_enemy(i)//remove enemy actor
 {
 	translate_enemies.splice(i, 1);//remove data from the arrays
-	translate_camera.splice(i, 1);
 	direction_enemies.splice(i, 1);
 	health_enemies.splice(i, 1);
 	num_enemies--;
@@ -749,7 +697,27 @@ window.addEventListener('keydown', function(event){
 		gl.generateMipmap(gl.TEXTURE_2D);
 		gl.bindTexture(gl.TEXTURE_2D, null);
 	}
+	if(event.keyCode == 65)
+	{
+		a_down = true;
+	}
+	if(event.keyCode ==  68)
+	{
+		d_down = true;
+	}
 });
+
+window.addEventListener('keyup', function(event)
+{
+	if(event.keyCode == 65)
+	{
+		a_down = false;
+	}
+	if(event.keyCode ==  68)
+	{
+		d_down = false;
+	}
+}, true);
 
 function render()
 {
@@ -872,6 +840,15 @@ function render()
 		 	useTexture = 0.0;
 	ambientProduct = mult(lightAmbient, materialAmbient);
 	//var ctm = mat4()
+		if(a_down == true && translate_player[0] <= 1)
+	{
+		translate_player = add(translate_player, vec3(.02, 0, 0));
+	}
+	if(d_down == true && translate_player[0] >= -1)
+	{
+		translate_player = subtract(translate_player, vec3(.02, 0, 0));
+	}
+	
 	for(var i = 0; i < num_enemies; i++)//loop through all the enemies and do the proper transformations and frame checks
 	{
 		//x-axis canvas boundaries
@@ -891,8 +868,11 @@ function render()
 		ctm = mat4();
 		
 		ctm = mult(ctm, viewMatrix);
-		ctm = mult(ctm, translate(translate_camera[i]));
-		ctm = mult(ctm, translate(translate_enemies[i]));
+
+		ctm = mult(ctm, translate(vec3(0, 0, 1.8)));
+		ctm = mult(ctm, rotate(degree, [0, 1, 0]));
+
+		ctm = mult(ctm, translate(add(translate_player, translate_enemies[i])));
 		ctm = mult(ctm, scale(scale_enemies));
 		
 		ctm = mult(ctm, rotate(time*omega, [2, 3, 1]));
@@ -938,7 +918,10 @@ function render()
 		ctm = mat4();
 		
 		ctm = mult(ctm, viewMatrix);
-		ctm = mult(ctm, translate(translate_bullets[i]));
+		ctm = mult(ctm, translate(vec3(0, 0, 1.8)));
+		ctm = mult(ctm, rotate(degree, [0, 1,0]));
+		ctm = mult(ctm, translate(vec3(0, 0, 0)));
+		ctm = mult(ctm, translate(add(translate_bullets[i], translate_player)));
 		ctm = mult(ctm, scale(scale_bullets));
 		ctm = mult(ctm, rotate(time*omega, [2, 3, 1]));
 
