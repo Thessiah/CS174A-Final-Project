@@ -22,45 +22,45 @@
 
     void main()
     {
-    	if(useTexture == 0.0){
-    		vec3 pos = (mvMatrix * vec4(vPosition, 1.0)).xyz;
-		vec3 light = (adjustLight * vec4(lightPosition, 1.0)).xyz;
-    		//light position in camera space
+    if(useTexture == 0.0){
+    vec3 pos = (mvMatrix * vec4(vPosition, 1.0)).xyz;
+    vec3 light = (adjustLight * vec4(lightPosition, 1.0)).xyz;
+    //light position in camera space
 
-    		vec3 L = normalize(light - pos);
-    		vec3 E = normalize(-pos);
-    		vec3 H = normalize(L + E);
-    		vec3 N = normalize(mvMatrix * vec4(vNormal, -1.0)).xyz;
+    vec3 L = normalize(light - pos);
+    vec3 E = normalize(-pos);
+    vec3 H = normalize(L + E);
+    vec3 N = normalize(mvMatrix * vec4(vNormal, -1.0)).xyz;
 
-    		vec4 ambient = ambientProduct;
-    		float kd = abs(dot(L, N));
-    		vec4 diffuse = kd * diffuseProduct;
+    vec4 ambient = ambientProduct;
+    float kd = abs(dot(L, N));
+    vec4 diffuse = kd * diffuseProduct;
 
-    		float ks = pow(abs(dot(N, H)), shininess);
-    		vec4 specular = ks * specularProduct;
+    float ks = pow(abs(dot(N, H)), shininess);
+    vec4 specular = ks * specularProduct;
 
-    		fColor = ambient + diffuse + specular;
-    		fColor.a  = 1.0;
-    		f_useTexture = useTexture;
-    		f_shininess = shininess;
-    		gl_Position = pMatrix * vec4(pos, 1.0);
-    	} else if(useTexture == 1.0){
-    		vec3 pos = (mvMatrix * vec4(vPosition, 1.0)).xyz;
-	    	//light position in camera space
+    fColor = ambient + diffuse + specular;
+    fColor.a  = 1.0;
+    f_useTexture = useTexture;
+    f_shininess = shininess;
+    gl_Position = pMatrix * vec4(pos, 1.0);
+    } else if(useTexture == 1.0){
+    vec3 pos = (mvMatrix * vec4(vPosition, 1.0)).xyz;
+    //light position in camera space
 
-    		fL = normalize(lightPosition - pos);
-    		fE = normalize(-pos);
-    		fH = normalize(fL + fE);
-    		fN = normalize(mvMatrix * vec4(vNormal, 0.0)).xyz;
+    fL = normalize(lightPosition - pos);
+    fE = normalize(-pos);
+    fH = normalize(fL + fE);
+    fN = normalize(mvMatrix * vec4(vNormal, 0.0)).xyz;
 
-    		fUV = vUV;
-    		f_useTexture = useTexture;
-		f_darken = darken;
-    		//fUV2 = vUV2;
-    		//fzoomOutTexture = vzoomOutTexture;
-    		//ftheta = vtheta;
-    		gl_Position = pMatrix * vec4(pos, 1.0);
-    	}
+    fUV = vUV;
+    f_useTexture = useTexture;
+    f_darken = darken;
+    //fUV2 = vUV2;
+    //fzoomOutTexture = vzoomOutTexture;
+    //ftheta = vtheta;
+    gl_Position = pMatrix * vec4(pos, 1.0);
+    }
     }
   </script>
 
@@ -75,27 +75,37 @@
     //varying float fzoomOutTexture, ftheta;
 
     uniform sampler2D uSampler;
+    uniform sampler2D uNormal;
+    uniform float uUseNormal;
     //uniform float shininess;
     varying float f_useTexture, f_shininess;
 
     void main()
     {
-    	if(f_useTexture == 0.0){
-    		gl_FragColor = fColor;
-    	} else if(f_useTexture == 1.0){
-    		vec4 texColor = texture2D(uSampler, fUV);
-    		vec4 ambient = 0.3 * texColor * f_darken;
-    		float kd = abs(dot(fL, fN));
-    		vec4 diffuse = kd * 0.6 * texColor;
+    if(f_useTexture == 0.0){
+    gl_FragColor = fColor;
+    } else if(f_useTexture == 1.0){
+    vec4 texColor = texture2D(uSampler, fUV);
+    vec4 ambient = 0.3 * texColor * f_darken;
 
-    		float ks = pow(abs(dot(fN, fH)), f_shininess);
-    		vec4 specular = 0.3 * ks * vec4(1.0, 1.0, 1.0, 1.0);
+    float kd;
+    if (uUseNormal == 0.0) {
+    kd = abs(dot(fL, fN));
+    } else {
+    vec3 normal = normalize(texture2D(uNormal, fUV).rgb * 2.0 - 1.0);
+    kd = max(dot(fL, normal), 0.0);
+    }
 
-    		vec4 fColor = ambient + diffuse + specular;
-    		fColor.a  = 1.0;
+    vec4 diffuse = kd * 0.6 * texColor;
 
-    		gl_FragColor = fColor;
-    	}
+    float ks = pow(abs(dot(fN, fH)), f_shininess);
+    vec4 specular = 0.3 * ks * vec4(1.0, 1.0, 1.0, 1.0);
+
+    vec4 fColor = ambient + diffuse + specular;
+    fColor.a  = 1.0;
+
+    gl_FragColor = fColor;
+    }
     }
   </script>
 

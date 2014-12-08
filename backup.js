@@ -1389,6 +1389,7 @@ function render()
 			level = 1;
 			startCounter = 1;
 		}
+		draw_moon();
 		////////////
 		//DRAW SUN
 		//
@@ -1596,15 +1597,6 @@ function render()
 		ctm = mult(ctm, translate(add(translate_grenades[i], translate_player)));
 		ctm = mult(ctm, rotate(-rotate_grenades[i], [0, 1, 0]));
 		ctm = mult(ctm, scale(scale_grenades[i]));
-		
-	//points
-	gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, flatten(sun_points), gl.STATIC_DRAW);
-	gl.vertexAttribPointer( ATTRIBUTE_position, 3, gl.FLOAT, false, 0, 0 );
-		//normals
-		gl.bindBuffer( gl.ARRAY_BUFFER, normalBuffer);
-		gl.bufferData( gl.ARRAY_BUFFER, flatten(sun_points), gl.STATIC_DRAW );
-		gl.vertexAttribPointer( ATTRIBUTE_normal, 3, gl.FLOAT, false, 0, 0 );
 
 		gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(ctm));
 		gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(projectionMatrix));
@@ -1615,14 +1607,9 @@ function render()
 		gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
 		gl.uniform1f(UNIFORM_shininess,  shininess);
 		gl.uniform1f(UNIFORM_useTexture,  useTexture);
-	//texture
-	gl.bindBuffer( gl.ARRAY_BUFFER, uvBuffer );
-	gl.bufferData( gl.ARRAY_BUFFER, flatten(sun_texCoordsArray), gl.STATIC_DRAW );
-	gl.vertexAttribPointer( ATTRIBUTE_uv, 2, gl.FLOAT, false, 0, 0 );
 
-		gl.drawArrays( gl.TRIANGLES, 0, sun_points.length);
+		gl.drawArrays( gl.TRIANGLES, 0, 36);
 
-		load_originals();
 		
 		if(!update_grenade(-delta, i))
 		{
@@ -2011,18 +1998,12 @@ function setup_sun(sun){
 	sun_values.lm = lm;
 }
 function load_sun_to_GPU(sun){
-	//points
-	gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, flatten(sun_points), gl.STATIC_DRAW);
-	gl.vertexAttribPointer( ATTRIBUTE_position, 3, gl.FLOAT, false, 0, 0 );
 		//normals
 		gl.bindBuffer( gl.ARRAY_BUFFER, normalBuffer);
 		gl.bufferData( gl.ARRAY_BUFFER, flatten(sun_normals), gl.STATIC_DRAW );
 		gl.vertexAttribPointer( ATTRIBUTE_normal, 3, gl.FLOAT, false, 0, 0 );
 
 		//lighting
-	gl.uniform3fv( UNIFORM_lightPosition, flatten(sun_values.lightPosition) );
-	gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(sun_values.projection));
 		ambientProduct = mult(sun.lightAmbient, sun.materialAmbient);
 		diffuseProduct = mult(sun.lightDiffuse, sun.materialDiffuse);
 		specularProduct = mult(sun.lightSpecular, sun.materialSpecular);
@@ -2033,12 +2014,8 @@ function load_sun_to_GPU(sun){
 		
 		gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(sun.ctm));
 		gl.uniformMatrix4fv(UNIFORM_adjustLight, false, flatten(sun.lm));
-		gl.uniform1f( UNIFORM_shininess, sun.materialShininess );
-	//texture
-	gl.bindBuffer( gl.ARRAY_BUFFER, uvBuffer );
-	gl.bufferData( gl.ARRAY_BUFFER, flatten(sun_texCoordsArray), gl.STATIC_DRAW );
-	gl.vertexAttribPointer( ATTRIBUTE_uv, 2, gl.FLOAT, false, 0, 0 );
 		
+		gl.uniform1f( UNIFORM_shininess, sun.materialShininess );
 }
 
 function draw_moon(){
