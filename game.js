@@ -140,6 +140,8 @@ var gravity_magnitude = 9.8;
 var selectColor = 1;
 var gameMode = 0;
 
+var startCounter = 0;
+
 var healthAmount = 100;
 var grenAmount = 5;
 //cube points
@@ -466,7 +468,6 @@ function kill_grenade(i)
 	material_grenades.splice(i, 1);
 	AABB_grenades.splice(i, 1);
 	num_grenades--;
-	drawText2();
 
 }
 
@@ -1243,6 +1244,11 @@ function render()
 		 gl.drawArrays( gl.TRIANGLES, 0, 8);
 	 }
 	else if (gameMode == 1){		//
+		if (startCounter == 0){
+			timer.reset();
+			level = 1;
+			startCounter = 1;
+		}
 		draw_moon();
 		////////////
 		//DRAW SUN
@@ -1560,7 +1566,7 @@ function render()
 		 render_Skybox_Textures();
 		 mvMatrix = viewMatrix;
 		 mvMatrix = mult(mvMatrix, scale(3.5, 3.5, 3.5));
-		 mvMatrix = mult(translate(0, 1.0, 0), mvMatrix);
+		 mvMatrix = mult(translate(0, 0.5, 0), mvMatrix);
 
 		 gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(mvMatrix));
 		 gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(orthoMatrix));
