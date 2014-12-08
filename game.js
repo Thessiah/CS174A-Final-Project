@@ -40,12 +40,15 @@ var specularProduct = mult(lightSpecular, materialSpecular);
 var shininess = 50;
 var lightPosition = vec3(0.0, 0.0, 0.0);
 
-var eye = vec3(0, 1.0, 1.8);
+var eye = vec3(0, 0.5, 1.8);
 var at = vec3(0, 0, 0);
 var up = vec3(0, 1, 0);
 
+var s = 11;
+var t = 5;
+
 var scale_enemies = vec3(0.2, 0.2, 0.2);
-var scale_skybox = vec3(10, 10, 10);
+var scale_skybox = vec3(s, s, s);
 var translate_gun = vec3(0.0, 0.0, 1.7);
 var translate_enemies = [];
 var direction_enemies = [];
@@ -70,6 +73,19 @@ var material_gun = vec4(1.0, 1.0, 1.0, 1.0);
 var light_gun = vec4(.0, .0, .0, .0);
 
 var translate_player = vec3(0, 0, 0);
+
+var translate_skybox = [vec3(s, 0, 0),
+						vec3(-s, 0, 0),
+						vec3(0, 0, 0),
+						vec3(0, t, 0),
+						vec3(0, 0, 0),
+						vec3(0, 0, -s)];
+var skybox_PX;
+var skybox_NX;
+var skybox_PY;
+var skybox_NY;
+var skybox_PZ;
+var skybox_NZ;
 
 var myTexture;
 var startTexture;
@@ -140,38 +156,103 @@ window.onload = function init()
 
 	tetrahedron(va, vb, vc, vd, points, normals, 4);
 	
-	// var path = './fadeaway/';
-	// var sides = [path + 'fadeaway_right.jpg', path + 'fadeaway_left.jpg',
-	// path + 'fadeaway_top.jpg',path + 'fadeaway_front.jpg',path + 'fadeaway_back.jpg'];
-	//myTexture = sides;
-	
 	//SKYBOX
-	myTexture = gl.createTexture();
-    myTexture.image = new Image();
+	skybox_texture();
+	menuTextures();
+		
+    var program = initShaders( gl, "vertex-shader", "fragment-shader" );
+    gl.useProgram( program );
+
+    positionBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, positionBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW );
+
+    normalBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, normalBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(normals), gl.STATIC_DRAW );
 	
-    // myTexture.image.onload = function(){
-		// gl.bindTexture(gl.TEXTURE_CUBE_MAP, myTexture);
-		// gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, myTexture.image);
-		// gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, myTexture.image);
+	uvBuffer = gl.createBuffer();
+    gl.bindBuffer( gl.ARRAY_BUFFER, uvBuffer );
+    gl.bufferData( gl.ARRAY_BUFFER, flatten(uv), gl.STATIC_DRAW );
 
-		// gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, myTexture.image);
-		// gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, myTexture.image);
+    ATTRIBUTE_position = gl.getAttribLocation( program, "vPosition" );
+    gl.enableVertexAttribArray( ATTRIBUTE_position );
 
-	    // gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, myTexture.image);
-		// gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, myTexture.image);
-
-		// gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-		// gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-		// gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-		// gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-		// glTexParameteri( gl.TEXTURE.CUBE.MAP, gl.TEXTURE_WRAP_R, gl.CLAMP_TO_EDGE );
-		// gl.generateMipmap(gl.TEXTURE_CUBE_MAP);
-		// gl.bindTexture(gl.TEXTURE_CUBE_MAP, null);
-	// }
+    ATTRIBUTE_normal = gl.getAttribLocation( program, "vNormal" );
+    gl.enableVertexAttribArray( ATTRIBUTE_normal );
 	
-	myTexture.image.onload = function(){
-		gl.bindTexture(gl.TEXTURE_2D, myTexture);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, myTexture.image);
+	ATTRIBUTE_uv = gl.getAttribLocation( program, "vUV" );
+    gl.enableVertexAttribArray( ATTRIBUTE_uv);
+	
+    gl.bindBuffer( gl.ARRAY_BUFFER, positionBuffer );
+    gl.vertexAttribPointer( ATTRIBUTE_position, 3, gl.FLOAT, false, 0, 0 );
+
+    gl.bindBuffer( gl.ARRAY_BUFFER, normalBuffer );
+    gl.vertexAttribPointer( ATTRIBUTE_normal, 3, gl.FLOAT, false, 0, 0 );
+	
+	gl.bindBuffer( gl.ARRAY_BUFFER, uvBuffer );
+    gl.vertexAttribPointer( ATTRIBUTE_uv, 2, gl.FLOAT, false, 0, 0 );
+	
+    UNIFORM_mvMatrix = gl.getUniformLocation(program, "mvMatrix");
+    UNIFORM_pMatrix = gl.getUniformLocation(program, "pMatrix");
+    UNIFORM_ambientProduct = gl.getUniformLocation(program, "ambientProduct");
+    UNIFORM_diffuseProduct = gl.getUniformLocation(program, "diffuseProduct");
+    UNIFORM_specularProduct = gl.getUniformLocation(program, "specularProduct");
+    UNIFORM_lightPosition = gl.getUniformLocation(program, "lightPosition");
+    UNIFORM_shininess = gl.getUniformLocation(program, "shininess");
+	UNIFORM_sampler = gl.getUniformLocation(program, "uSampler");
+	UNIFORM_useTexture = gl.getUniformLocation(program, "useTexture");
+
+    viewMatrix = lookAt(eye, at, up);
+    projectionMatrix = perspective(90, 1, 0.001, 1000);
+	orthoMatrix = ortho(-2, 2, -2, 2, -2, 2);
+
+    timer.reset();
+    gl.enable(gl.DEPTH_TEST);
+	
+	for(var i = 0; i < 5; i++) //spawn the initial 5 enemies
+	{
+		spawn_enemy();
+	}
+	
+	canvas.onmousemove = function(e){ //mouse controls - ignore - under construction
+	var x = e.clientX;
+	var y = e.clientY;
+	//degree = (x - canvas.width / 2)
+	degree =2*(x - canvas.width/2)/canvas.width * 40;
+	rotation += degree - prev_dir;
+	prev_dir = degree;
+	
+	// for(var z = 0; z < 6; z++) {
+	// translate_skybox[z] = vec3(rotation, 0, 0);
+	// }	
+	}
+	//translate_gun[0] = degree;
+    
+    canvas.onmousedown = function(e){ //shoot on click - can also be used as a debug tool
+	//temp = vec3(0, 0, 0);
+	//spawn_enemy();
+	//alert(counter);
+	if(e.button == 0)
+	{
+		shoot();
+	}
+	if(e.button == 1)
+	{
+	}
+    };
+    render();
+};
+
+
+function skybox_texture() //Generate textures for skybox
+{
+	skybox_PX = gl.createTexture();
+    skybox_PX.image = new Image();
+	
+	skybox_PX.image.onload = function(){
+		gl.bindTexture(gl.TEXTURE_2D, skybox_PX);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, skybox_PX.image);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -180,11 +261,147 @@ window.onload = function init()
 		gl.bindTexture(gl.TEXTURE_2D, null);
 	}
    
-   myTexture.image.src = "./Images/fadeaway_front.jpg";
-	//myTexture.image.src = "./Images/chrome.jpg";
+   skybox_PX.image.src = "./Images/fadeaway_right.jpg";
+   
+   skybox_NX = gl.createTexture();
+   skybox_NX.image = new Image();
 	
-	//skybox_texture(myTexture);
+   skybox_NX.image.onload = function(){
+		gl.bindTexture(gl.TEXTURE_2D, skybox_NX);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, skybox_NX.image);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+		gl.generateMipmap(gl.TEXTURE_2D);
+		gl.bindTexture(gl.TEXTURE_2D, null);
+	}
+   
+   skybox_NX.image.src = "./Images/fadeaway_left.jpg";
+   
+   skybox_PY = gl.createTexture();
+   skybox_PY.image = new Image();
 	
+   skybox_PY.image.onload = function(){
+		gl.bindTexture(gl.TEXTURE_2D, skybox_PY);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, skybox_PY.image);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+		gl.generateMipmap(gl.TEXTURE_2D);
+		gl.bindTexture(gl.TEXTURE_2D, null);
+	}
+   
+   skybox_PY.image.src = "./Images/fadeaway_top.jpg";
+   
+   
+   skybox_NY = gl.createTexture();
+   skybox_NY.image = new Image();
+	
+   skybox_NY.image.onload = function(){
+		gl.bindTexture(gl.TEXTURE_2D, skybox_NY);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, skybox_NY.image);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+		gl.generateMipmap(gl.TEXTURE_2D);
+		gl.bindTexture(gl.TEXTURE_2D, null);
+	}
+   
+    skybox_NY.image.src = "./Images/fadeaway_back.jpg"
+	
+	skybox_PZ = gl.createTexture();
+    skybox_PZ.image = new Image();
+	
+   skybox_PZ.image.onload = function(){
+		gl.bindTexture(gl.TEXTURE_2D, skybox_PZ);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, skybox_PZ.image);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+		gl.generateMipmap(gl.TEXTURE_2D);
+		gl.bindTexture(gl.TEXTURE_2D, null);
+	}
+   
+   skybox_PZ.image.src = "./Images/fadeaway_front.jpg";
+   
+   skybox_NZ = gl.createTexture();
+   skybox_NZ.image = new Image();
+	
+   skybox_NZ.image.onload = function(){
+		gl.bindTexture(gl.TEXTURE_2D, skybox_NZ);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, skybox_NZ.image);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+		gl.generateMipmap(gl.TEXTURE_2D);
+		gl.bindTexture(gl.TEXTURE_2D, null);
+	}
+   
+   skybox_NZ.image.src = "./Images/fadeaway_back.jpg";
+}
+
+function shoot()//generate a bullet to be shot
+{
+	translate_bullets[num_bullets] = subtract(vec3(0, 0, 0), translate_player);//starting location
+	direction_bullets[num_bullets] = vec3(-.5 * Math.tan(-degree * Math.PI / 180), 0, -.5);//bullet direction
+	num_bullets++;
+}
+function kill_bullet(i)//remove bullet actor
+{
+	translate_bullets.splice(i, 1); //remove data from the arrays
+	direction_bullets.splice(i, 1);
+	num_bullets--;
+}
+
+function spawn_enemy()//spawn an enemy with random movement
+{
+	var curr = translate_enemies.length;
+	translate_enemies[curr] = vec3(Math.random() * 3 - 1.5, 0, -5);//starting location with a random x position
+	direction_enemies[curr] = vec3(Math.random() / 2 + .2, 0, Math.random() / 4 + .1);//enemy direction with a random x and y direction
+	if(Math.random() >= .5)//make the initial x direction 50/50
+	{
+		direction_enemies[curr][0] *= -1;
+	}
+	health_enemies[curr] = enemy_health; //set health to the predetermined value
+	num_enemies++;
+}
+function kill_enemy(i)//remove enemy actor
+{
+	translate_enemies.splice(i, 1);//remove data from the arrays
+	direction_enemies.splice(i, 1);
+	health_enemies.splice(i, 1);
+	num_enemies--;
+}
+function damage_enemy(i, damage)//damage enemy actor
+{
+	health_enemies[i] -= damage;//deduct the damage from the enemy's health
+	if(health_enemies[i] <= 0)//if the enemy is dead
+	{
+		kill_enemy(i);//kill it
+		player_score += enemy_value;//increment score based on the enemy's value
+	}
+}
+
+function check_collision(bullet, enemy)
+{
+	var xd = translate_enemies[enemy][0] - translate_bullets[bullet][0];
+	var zd = translate_enemies[enemy][2] - translate_bullets[bullet][2];
+	var distance = Math.sqrt(xd * xd + zd * zd);//calculate distance between bullet and enemy
+	if(distance <=  length * scale_enemies[0] * 2)//if within distance
+	{
+		kill_bullet(bullet);//remove bullet
+		damage_enemy(enemy, bullet_damage);//damage enemy
+		return true;
+	}
+}
+
+function menuTextures() //generate textures for menus
+{
 	startTexture = gl.createTexture();
     startTexture.image = new Image();
     startTexture.image.onload = function(){
@@ -292,158 +509,6 @@ window.onload = function init()
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
     gl.generateMipmap(gl.TEXTURE_2D);
 	gl.bindTexture(gl.TEXTURE_2D, null);
-	
-    var program = initShaders( gl, "vertex-shader", "fragment-shader" );
-    gl.useProgram( program );
-
-    positionBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, positionBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(points), gl.STATIC_DRAW );
-
-    normalBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, normalBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(normals), gl.STATIC_DRAW );
-	
-	uvBuffer = gl.createBuffer();
-    gl.bindBuffer( gl.ARRAY_BUFFER, uvBuffer );
-    gl.bufferData( gl.ARRAY_BUFFER, flatten(uv), gl.STATIC_DRAW );
-
-    ATTRIBUTE_position = gl.getAttribLocation( program, "vPosition" );
-    gl.enableVertexAttribArray( ATTRIBUTE_position );
-
-    ATTRIBUTE_normal = gl.getAttribLocation( program, "vNormal" );
-    gl.enableVertexAttribArray( ATTRIBUTE_normal );
-	
-	ATTRIBUTE_uv = gl.getAttribLocation( program, "vUV" );
-    gl.enableVertexAttribArray( ATTRIBUTE_uv);
-	
-    gl.bindBuffer( gl.ARRAY_BUFFER, positionBuffer );
-    gl.vertexAttribPointer( ATTRIBUTE_position, 3, gl.FLOAT, false, 0, 0 );
-
-    gl.bindBuffer( gl.ARRAY_BUFFER, normalBuffer );
-    gl.vertexAttribPointer( ATTRIBUTE_normal, 3, gl.FLOAT, false, 0, 0 );
-	
-	gl.bindBuffer( gl.ARRAY_BUFFER, uvBuffer );
-    gl.vertexAttribPointer( ATTRIBUTE_uv, 2, gl.FLOAT, false, 0, 0 );
-	
-    UNIFORM_mvMatrix = gl.getUniformLocation(program, "mvMatrix");
-    UNIFORM_pMatrix = gl.getUniformLocation(program, "pMatrix");
-    UNIFORM_ambientProduct = gl.getUniformLocation(program, "ambientProduct");
-    UNIFORM_diffuseProduct = gl.getUniformLocation(program, "diffuseProduct");
-    UNIFORM_specularProduct = gl.getUniformLocation(program, "specularProduct");
-    UNIFORM_lightPosition = gl.getUniformLocation(program, "lightPosition");
-    UNIFORM_shininess = gl.getUniformLocation(program, "shininess");
-	UNIFORM_sampler = gl.getUniformLocation(program, "uSampler");
-	UNIFORM_useTexture = gl.getUniformLocation(program, "useTexture");
-
-    viewMatrix = lookAt(eye, at, up);
-    projectionMatrix = perspective(90, 1, 0.001, 1000);
-	orthoMatrix = ortho(-2, 2, -2, 2, -2, 2);
-
-    timer.reset();
-    gl.enable(gl.DEPTH_TEST);
-	
-	for(var i = 0; i < 5; i++) //spawn the initial 5 enemies
-	{
-		spawn_enemy();
-	}
-	
-	canvas.onmousemove = function(e){ //mouse controls - ignore - under construction
-	var x = e.clientX;
-	var y = e.clientY;
-	//degree = (x - canvas.width / 2)
-	degree =2*(x - canvas.width/2)/canvas.width * 40;
-	rotation += degree - prev_dir;
-	prev_dir = degree;
-	//translate_gun[0] = degree;
-    };
-    canvas.onmousedown = function(e){ //shoot on click - can also be used as a debug tool
-	//temp = vec3(0, 0, 0);
-	//spawn_enemy();
-	//alert(counter);
-	if(e.button == 0)
-	{
-		shoot();
-	}
-	if(e.button == 1)
-	{
-	}
-    };
-    render();
-}
-
-function skybox_texture(myTexture)
-{
-	myTexture = gl.createTexture();
-    myTexture.image = new Image();
-	
-    myTexture.image.onload = function(){
-		gl.bindTexture(gl.TEXTURE_2D, myTexture);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, myTexture.image);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
-		gl.generateMipmap(gl.TEXTURE_2D);
-		gl.bindTexture(gl.TEXTURE_2D, null);
-	}
-    //myTexture.image.src = "./fadeaway/fadeaway_front.jpg";
-	myTexture.image.src = "./Images/uclaBruin.jpg";
-}
-
-function shoot()//generate a bullet to be shot
-{
-	translate_bullets[num_bullets] = subtract(vec3(0, 0, 0), translate_player);//starting location
-	direction_bullets[num_bullets] = vec3(-.5 * Math.tan(-degree * Math.PI / 180), 0, -.5);//bullet direction
-	num_bullets++;
-}
-function kill_bullet(i)//remove bullet actor
-{
-	translate_bullets.splice(i, 1); //remove data from the arrays
-	direction_bullets.splice(i, 1);
-	num_bullets--;
-}
-
-function spawn_enemy()//spawn an enemy with random movement
-{
-	var curr = translate_enemies.length;
-	translate_enemies[curr] = vec3(Math.random() * 3 - 1.5, 0, -5);//starting location with a random x position
-	direction_enemies[curr] = vec3(Math.random() / 2 + .2, 0, Math.random() / 4 + .1);//enemy direction with a random x and y direction
-	if(Math.random() >= .5)//make the initial x direction 50/50
-	{
-		direction_enemies[curr][0] *= -1;
-	}
-	health_enemies[curr] = enemy_health; //set health to the predetermined value
-	num_enemies++;
-}
-function kill_enemy(i)//remove enemy actor
-{
-	translate_enemies.splice(i, 1);//remove data from the arrays
-	direction_enemies.splice(i, 1);
-	health_enemies.splice(i, 1);
-	num_enemies--;
-}
-function damage_enemy(i, damage)//damage enemy actor
-{
-	health_enemies[i] -= damage;//deduct the damage from the enemy's health
-	if(health_enemies[i] <= 0)//if the enemy is dead
-	{
-		kill_enemy(i);//kill it
-		player_score += enemy_value;//increment score based on the enemy's value
-	}
-}
-
-function check_collision(bullet, enemy)
-{
-	var xd = translate_enemies[enemy][0] - translate_bullets[bullet][0];
-	var zd = translate_enemies[enemy][2] - translate_bullets[bullet][2];
-	var distance = Math.sqrt(xd * xd + zd * zd);//calculate distance between bullet and enemy
-	if(distance <=  length * scale_enemies[0] * 2)//if within distance
-	{
-		kill_bullet(bullet);//remove bullet
-		damage_enemy(enemy, bullet_damage);//damage enemy
-		return true;
-	}
 }
 
 function measureText(ctx, textToMeasure) {
@@ -714,13 +779,159 @@ window.addEventListener('keyup', function(event)
 	}
 }, true);
 
+function render_Skybox_Textures()
+{
+	var ctm = mat4();
+	
+		//Skybox Right Side
+		ctm = mult(ctm, viewMatrix);
+		ctm = mult(ctm, translate(translate_skybox[0]));
+		ctm = mult(ctm, scale(scale_skybox));
+		
+		ctm = mult(ctm, rotate(90, vec3(0, -1, 0)));
+
+		gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(ctm));
+		gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(projectionMatrix));
+		
+		gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, skybox_PX);
+	
+		gl.uniform4fv(UNIFORM_ambientProduct,  flatten(ambientProduct));
+		gl.uniform4fv(UNIFORM_diffuseProduct,  flatten(diffuseProduct));
+		gl.uniform4fv(UNIFORM_specularProduct, flatten(specularProduct));
+		gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
+		gl.uniform1f(UNIFORM_shininess,  shininess);
+		gl.uniform1i(UNIFORM_sampler, 0);
+		gl.uniform1f(UNIFORM_useTexture,  useTexture);
+
+		gl.drawArrays( gl.TRIANGLES, 0, 8);
+		
+		//Skybox left Side
+		ctm = mat4();
+	   	ctm = mult(ctm, viewMatrix);
+		ctm = mult(ctm, translate(translate_skybox[1]));
+		ctm = mult(ctm, scale(scale_skybox));
+		
+		ctm = mult(ctm, rotate(90, [0, 1, 0]));
+
+		gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(ctm));
+		gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(projectionMatrix));
+		
+		gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, skybox_NX);
+	
+		gl.uniform4fv(UNIFORM_ambientProduct,  flatten(ambientProduct));
+		gl.uniform4fv(UNIFORM_diffuseProduct,  flatten(diffuseProduct));
+		gl.uniform4fv(UNIFORM_specularProduct, flatten(specularProduct));
+		gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
+		gl.uniform1f(UNIFORM_shininess,  shininess);
+		gl.uniform1i(UNIFORM_sampler, 0);
+		gl.uniform1f(UNIFORM_useTexture,  useTexture);
+
+		gl.drawArrays( gl.TRIANGLES, 0, 8);
+		
+		//Skybox Top Side
+		ctm = mat4();
+		ctm = mult(ctm, viewMatrix);
+		ctm = mult(ctm, translate(translate_skybox[2]));
+		ctm = mult(ctm, scale(scale_skybox));
+		
+		ctm = mult(ctm, rotate(90, [-1, 0, 0]));
+
+		gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(ctm));
+		gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(projectionMatrix));
+		
+		gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, skybox_PY);
+	
+		gl.uniform4fv(UNIFORM_ambientProduct,  flatten(ambientProduct));
+		gl.uniform4fv(UNIFORM_diffuseProduct,  flatten(diffuseProduct));
+		gl.uniform4fv(UNIFORM_specularProduct, flatten(specularProduct));
+		gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
+		gl.uniform1f(UNIFORM_shininess,  shininess);
+		gl.uniform1i(UNIFORM_sampler, 0);
+		gl.uniform1f(UNIFORM_useTexture,  useTexture);
+
+		gl.drawArrays( gl.TRIANGLES, 0, 8);
+		
+		//Skybox Bottom Side
+		ctm = mat4();
+		ctm = mult(ctm, viewMatrix);
+		ctm = mult(ctm, translate(translate_skybox[3]));
+		ctm = mult(ctm, scale(vec3(s,s,35)));
+		
+		ctm = mult(ctm, rotate(90, vec3(1, 0, 0)));
+
+		gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(ctm));
+		gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(projectionMatrix));
+		
+		gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, skybox_NY);
+	
+		gl.uniform4fv(UNIFORM_ambientProduct,  flatten(ambientProduct));
+		gl.uniform4fv(UNIFORM_diffuseProduct,  flatten(diffuseProduct));
+		gl.uniform4fv(UNIFORM_specularProduct, flatten(specularProduct));
+		gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
+		gl.uniform1f(UNIFORM_shininess,  shininess);
+		gl.uniform1i(UNIFORM_sampler, 0);
+		gl.uniform1f(UNIFORM_useTexture,  useTexture);
+
+		gl.drawArrays( gl.TRIANGLES, 0, 8);
+		
+		//Skybox front Side
+		ctm = mat4();
+		ctm = mult(ctm, viewMatrix);
+		ctm = mult(ctm, translate(translate_skybox[4]));
+		ctm = mult(ctm, scale(scale_skybox));
+		
+		gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(ctm));
+		gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(projectionMatrix));
+		
+		gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, skybox_PZ);
+	
+		gl.uniform4fv(UNIFORM_ambientProduct,  flatten(ambientProduct));
+		gl.uniform4fv(UNIFORM_diffuseProduct,  flatten(diffuseProduct));
+		gl.uniform4fv(UNIFORM_specularProduct, flatten(specularProduct));
+		gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
+		gl.uniform1f(UNIFORM_shininess,  shininess);
+		gl.uniform1i(UNIFORM_sampler, 0);
+		gl.uniform1f(UNIFORM_useTexture,  useTexture);
+
+		gl.drawArrays( gl.TRIANGLES, 0, 8);
+		
+		//Skybox Back Side
+		ctm = mat4();
+		ctm = mult(ctm, viewMatrix);
+		ctm = mult(ctm, translate(translate_skybox[5]));
+		ctm = mult(ctm, scale(scale_skybox));
+		
+		gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(ctm));
+		gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(projectionMatrix));
+		
+		gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, skybox_NZ);
+	
+		gl.uniform4fv(UNIFORM_ambientProduct,  flatten(ambientProduct));
+		gl.uniform4fv(UNIFORM_diffuseProduct,  flatten(diffuseProduct));
+		gl.uniform4fv(UNIFORM_specularProduct, flatten(specularProduct));
+		gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
+		gl.uniform1f(UNIFORM_shininess,  shininess);
+		gl.uniform1i(UNIFORM_sampler, 0);
+		gl.uniform1f(UNIFORM_useTexture,  useTexture);
+
+		gl.drawArrays( gl.TRIANGLES, 0, 8);
+		
+}
+
 function render()
 {
     gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	
 	if (gameMode == 0){
 	
 	useTexture = 1.0;
-	
+	render_Skybox_Textures();
 	//MENUS
 		 var mvMatrix = viewMatrix;
 		 mvMatrix = mult(translate(0, 1.0, 0), mvMatrix);
@@ -795,6 +1006,9 @@ function render()
 	 }
 	else if (gameMode == 1){		//
 		useTexture = 1.0;
+
+		render_Skybox_Textures();
+		
 		var delta = timer.getElapsedTime() / 1000;
 	time += delta;
 	counter += delta;
@@ -835,7 +1049,7 @@ function render()
 		 	useTexture = 0.0;
 	ambientProduct = mult(lightAmbient, materialAmbient);
 	//var ctm = mat4()
-		if(a_down == true && translate_player[0] <= 1)
+	if(a_down == true && translate_player[0] <= 1)
 	{
 		translate_player = add(translate_player, vec3(.02, 0, 0));
 	}
@@ -875,8 +1089,8 @@ function render()
 		gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(ctm));
 		gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(projectionMatrix));
 		
-		gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, myTexture);
+		// gl.activeTexture(gl.TEXTURE0);
+        // gl.bindTexture(gl.TEXTURE_2D, myTexture);
 	
 		gl.uniform4fv(UNIFORM_ambientProduct,  flatten(ambientProduct));
 		gl.uniform4fv(UNIFORM_diffuseProduct,  flatten(diffuseProduct));
@@ -1024,6 +1238,7 @@ function render()
 	 }
 	 else if (gameMode == 2){		//options
 		 useTexture = 1.0;
+		 render_Skybox_Textures();
 		 mvMatrix = viewMatrix;
 		 mvMatrix = mult(mvMatrix, scale(3.5, 3.5, 3.5));
 		 mvMatrix = mult(translate(0, 1.0, 0), mvMatrix);
@@ -1043,9 +1258,11 @@ function render()
 	 }
 	 else if (gameMode == 3){		//rules
 		 useTexture = 1.0;
+		 render_Skybox_Textures();
 	 }
 	 else if (gameMode == 4){		//ded
 		 useTexture = 1.0;
+		 render_Skybox_Textures();
 		 mvMatrix = viewMatrix;
 
 		 gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(mvMatrix));
@@ -1062,43 +1279,6 @@ function render()
 		 gl.drawArrays( gl.TRIANGLES, 0, 36);
 	 }
 	useTexture = 1.0;
-	var ctm = mat4();
-		
-		ctm = mult(ctm, viewMatrix);
-		// ctm = mult(ctm, translate(translate_camera[i]));
-		// ctm = mult(ctm, translate(translate_enemies[i]));
-		//ctm = mult(translate(0, 5.5, 0), ctm);
-		ctm = mult(ctm, scale(scale_skybox));
-		
-		//ctm = mult(ctm, rotate(time*omega, [2, 3, 1]));
-
-		gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(ctm));
-		gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(projectionMatrix));
-		
-		gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, myTexture);
-	
-		gl.uniform4fv(UNIFORM_ambientProduct,  flatten(ambientProduct));
-		gl.uniform4fv(UNIFORM_diffuseProduct,  flatten(diffuseProduct));
-		gl.uniform4fv(UNIFORM_specularProduct, flatten(specularProduct));
-		gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
-		gl.uniform1f(UNIFORM_shininess,  shininess);
-		gl.uniform1i(UNIFORM_sampler, 0);
-		gl.uniform1f(UNIFORM_useTexture,  useTexture);
-
-		gl.drawArrays( gl.TRIANGLES, 0, 36);
-		
-		// gl.activeTexture(gl.TEXTURE0);
-        // gl.bindTexture(gl.TEXTURE_2D, myTexture[1]);
-	
-		// gl.uniform4fv(UNIFORM_ambientProduct,  flatten(ambientProduct));
-		// gl.uniform4fv(UNIFORM_diffuseProduct,  flatten(diffuseProduct));
-		// gl.uniform4fv(UNIFORM_specularProduct, flatten(specularProduct));
-		// gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
-		// gl.uniform1f(UNIFORM_shininess,  shininess);
-		// gl.uniform1f(UNIFORM_useTexture,  useTexture);
-
-		// gl.drawArrays( gl.TRIANGLES, 0, 36);
 		
     window.requestAnimFrame( render );
 }
