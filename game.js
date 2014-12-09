@@ -1758,31 +1758,9 @@ function render()
 		enemy_health = 1 + level / 2;
 	}
 	
-	if(time >= 30.0 * level)
+	/*if(time >= 30.0 * level)
 	{
-		level++;
-		player_health += 25;
-		grenAmount += 1;
-		drawText();
-		drawText2();
-		canvasTexture = gl.createTexture();
-		gl.bindTexture(gl.TEXTURE_2D, canvasTexture);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, document.getElementById('textureCanvas'));
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
-		gl.generateMipmap(gl.TEXTURE_2D);
-		gl.bindTexture(gl.TEXTURE_2D, null);
-
-		grenTexture = gl.createTexture();
-		gl.bindTexture(gl.TEXTURE_2D, grenTexture);
-		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, document.getElementById('textureCanvas2'));
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
-		gl.generateMipmap(gl.TEXTURE_2D);
-		gl.bindTexture(gl.TEXTURE_2D, null);
-		lightAmbient = vec4(Math.random(), Math.random(), Math.random(), 1.0);
-      	materialAmbient = vec4(Math.random(), Math.random(), Math.random(), 1.0);
-	}
+	}*/
 	
 	//GUN
 	
@@ -2082,8 +2060,33 @@ function setup_sun(sun){
 	var translate_z = -12;
 	var translationMatrix = translate(translate_x, translate_y, translate_z);
 
-	if (sun.sun_theta >= 180)
+	if (sun.sun_theta >= 180){
 		sun.sun_theta = 45;
+		level++;
+		//level++;
+		player_health += 25;
+		grenAmount += 1;
+		drawText();
+		drawText2();
+		canvasTexture = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, canvasTexture);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, document.getElementById('textureCanvas'));
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+		gl.generateMipmap(gl.TEXTURE_2D);
+		gl.bindTexture(gl.TEXTURE_2D, null);
+
+		grenTexture = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, grenTexture);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, document.getElementById('textureCanvas2'));
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+		gl.generateMipmap(gl.TEXTURE_2D);
+		gl.bindTexture(gl.TEXTURE_2D, null);
+		lightAmbient = vec4(Math.random(), Math.random(), Math.random(), 1.0);
+      	materialAmbient = vec4(Math.random(), Math.random(), Math.random(), 1.0);
+		
+	}
 	sun.sun_theta += 0.05;
 	var rotationMatrix = rotate(sun.sun_theta, vec3(0, 0, 1));
 
