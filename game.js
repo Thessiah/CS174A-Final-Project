@@ -73,7 +73,7 @@ var speed_bullets = vec3(.5, .5, .5);
 var scale_bullets = vec3(.05, .05, .05);
 var num_bullets = 0;
 var bullet_damage = 2;
-var material_bullet = vec4(1.0, 1.0, 1.0, 1.0);
+var material_bullet = vec4(0.2, 0.2, 0.2, 1.0);
 var light_bullet = vec4(1.0, 1.0, 1.0, 1.0);
 var AABB_bullets = [];
 
@@ -1156,7 +1156,7 @@ function render_Skybox_Textures()
 	
 		//Skybox Right Side
 		ctm = mult(ctm, viewMatrix);
-		ctm = mult(ctm, translate(translate_skybox[0]));
+		ctm = mult(ctm, translate(add(translate_player, translate_skybox[0])));
 		ctm = mult(ctm, scale(scale_skybox));
 		
 		ctm = mult(ctm, rotate(90, vec3(0, -1, 0)));
@@ -1183,7 +1183,7 @@ function render_Skybox_Textures()
 		//Skybox left Side
 		ctm = mat4();
 	   	ctm = mult(ctm, viewMatrix);
-		ctm = mult(ctm, translate(translate_skybox[1]));
+		ctm = mult(ctm, translate(add(translate_player, translate_skybox[1])));
 		ctm = mult(ctm, scale(scale_skybox));
 		
 		ctm = mult(ctm, rotate(90, [0, 1, 0]));
@@ -1208,7 +1208,7 @@ function render_Skybox_Textures()
 		//Skybox Top Side
 		ctm = mat4();
 		ctm = mult(ctm, viewMatrix);
-		ctm = mult(ctm, translate(translate_skybox[2]));
+		ctm = mult(ctm, translate(add(translate_player, translate_skybox[2])));
 		ctm = mult(ctm, scale(scale_skybox));
 		
 		ctm = mult(ctm, rotate(90, [-1, 0, 0]));
@@ -1233,7 +1233,7 @@ function render_Skybox_Textures()
 		//Skybox Bottom Side
 		ctm = mat4();
 		ctm = mult(ctm, viewMatrix);
-		ctm = mult(ctm, translate(translate_skybox[3]));
+		ctm = mult(ctm, translate(add(translate_player, translate_skybox[3])));
 		//ctm = mult(ctm, scale(vec3(s,s,35)));
 		ctm = mult(ctm, scale(scale_skybox));
 		
@@ -1263,7 +1263,7 @@ function render_Skybox_Textures()
 		//Skybox front Side
 		ctm = mat4();
 		ctm = mult(ctm, viewMatrix);
-		ctm = mult(ctm, translate(translate_skybox[4]));
+		ctm = mult(ctm, translate(add(translate_player, translate_skybox[4])));
 		ctm = mult(ctm, scale(scale_skybox));
 		ctm = mult(rotate(degree, vec3(0, 1, 0)), ctm);
 		
@@ -1288,7 +1288,7 @@ function render_Skybox_Textures()
 		//Skybox Back Side
 		ctm = mat4();
 		ctm = mult(ctm, viewMatrix);
-		ctm = mult(ctm, translate(translate_skybox[5]));
+		ctm = mult(ctm, translate(add(translate_player, translate_skybox[5])));
 		ctm = mult(ctm, scale(scale_skybox));
 		ctm = mult(rotate(degree, vec3(0, 1, 0)), ctm);
 		
