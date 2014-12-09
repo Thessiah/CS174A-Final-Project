@@ -51,7 +51,7 @@ var up = vec3(0, 1, 0);
 var s = 11;
 var t = 5;
 
-var scale_enemies = vec3(0.2, 0.2, 0.0000000001);
+var scale_enemies = []
 var scale_skybox = vec3(s, s, s);
 var translate_gun = vec3(0.0, 0.0, 1.7);
 var translate_enemies = [];
@@ -62,6 +62,7 @@ var switch_enemies = [];
 var counter_enemies = [];
 var AABB_enemies = [];
 var AABB_enemies_prev = [];
+var type_enemies = [];
 
 var enemy_damage = 5;
 var enemy_value = 5;
@@ -515,7 +516,7 @@ function kill_grenade(i)
 	material_grenades.splice(i, 1);
 	AABB_grenades.splice(i, 1);
 	num_grenades--;
-
+ada
 }
 
 function spawn_enemy()//spawn an enemy with random movement
@@ -528,10 +529,17 @@ function spawn_enemy()//spawn an enemy with random movement
 	if(Math.random() >= .5)//make the initial x direction 50/50
 	{
 		direction_enemies[curr][0] *= -1;
+		scale_enemies[curr] = vec3(0.2, 0.2, 0.0000000001);
+		type_enemies[curr] = true;
+	}
+	else
+	{
+		scale_enemies[curr] = vec3(0.2, 0.2, 0.22);
+		type_enemies[curr] = false
 	}
 	switch_enemies[curr] = true;
 	counter_enemies[curr] = 0;
-	AABB_enemies[curr] = calculate_AABB(translate_enemies[curr], length * scale_enemies[0]);
+	AABB_enemies[curr] = calculate_AABB(translate_enemies[curr], length * scale_enemies[curr][0]);
 	AABB_enemies_prev[curr] = AABB_enemies[curr];
 	health_enemies[curr] = enemy_health; //set health to the predetermined value
 	num_enemies++;
@@ -545,6 +553,8 @@ function kill_enemy(i)//remove enemy actor
 	counter_enemies.splice(i, 1);
 	AABB_enemies.splice(i, 1);
 	AABB_enemies_prev.splice(i, 1);
+	scale_enemies.splice(i, 1);
+	type_enemies.splice(i, 1);
 	num_enemies--;
 }
 function damage_enemy(i, damage)//damage enemy actor
@@ -1516,20 +1526,26 @@ function render()
 		ctm = mult(ctm, rotate(degree, [0, 1, 0]));
 
 		ctm = mult(ctm, translate(add(translate_player, translate_enemies[i])));
-		ctm = mult(ctm, scale(scale_enemies));
+		ctm = mult(ctm, scale(scale_enemies[i]));
 		
 		//ctm = mult(ctm, rotate(time*omega, [2, 3, 1]));
-
+		if(type_enemies[i])
+		{
+			gl.activeTexture(gl.TEXTURE0);
+			gl.bindTexture(gl.TEXTURE_2D, enemyTexture);
+		
+			useTexture = 1.0;
+		}
+		else
+		{
+			ctm = mult(ctm, rotate(time * 2 *omega, [0, 1, 0]));
+		}
 		gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(ctm));
 		gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(projectionMatrix));
 		
 		// gl.activeTexture(gl.TEXTURE0);
         // gl.bindTexture(gl.TEXTURE_2D, myTexture);
-
-		gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, enemyTexture);
-
-		useTexture = 1.0;
+	
 	
 		gl.uniform4fv(UNIFORM_ambientProduct,  flatten(ambientProduct));
 		gl.uniform4fv(UNIFORM_diffuseProduct,  flatten(diffuseProduct));
@@ -1543,13 +1559,13 @@ function render()
 
 		gl.drawArrays( gl.TRIANGLES, 0, 36);
 		AABB_enemies_prev[i] = AABB_enemies[i];
-		AABB_enemies[i] = calculate_AABB(translate_enemies[i], length * scale_enemies[0]);
+		AABB_enemies[i] = calculate_AABB(translate_enemies[i], length * scale_enemies[i][0]);
 		for(var j = i + 1; j < num_enemies; j++)
 		{
 			check_bounce(i, j);
 		}
 		//z-axis canvas boundaries
-		if(translate_enemies[i][2] + length * scale_enemies[2] >= 1.8 || translate_enemies[i][2] - length * scale_enemies[2] <= -10){
+		if(translate_enemies[i][2] + length * scale_enemies[i][2] >= 1.8 || translate_enemies[i][2] - length * scale_enemies[i][2] <= -10){
       		kill_enemy(i);//remove enemy when they hit the player
 			player_health -= enemy_damage;//have the player take damage based on enemy damage
 			if (player_health <= 0){
