@@ -1996,7 +1996,8 @@ function setup_sun(sun){
 	var ctm = mat4();
 	ctm = mult(translationMatrix, ctm);
 	ctm = mult(rotationMatrix, ctm);
-	ctm = mult(translate(0, -4, 0), ctm);
+	ctm = mult(translate(translate_player[0], -4, 0), ctm);
+	ctm = mult(rotate(degree, vec3(0, 1, 0)), ctm);
 	sun.ctm = ctm;
 
 	if (sun.sun_theta < 180 && sun.sun_theta > 35.9){
@@ -2019,7 +2020,8 @@ function setup_sun(sun){
 	var lm = mat4();
 	lm = mult(translationMatrix, lm);
 	lm = mult(rotationMatrix, lm);
-	lm = mult(translate(0, -4, 0), lm);
+	lm = mult(translate(translate_player[0], -4, 0), lm);
+	lm = mult(rotate(degree, vec3(0, 1, 0)), lm);
 	sun_values.lm = lm;
 }
 function load_sun_to_GPU(sun){
@@ -2027,12 +2029,12 @@ function load_sun_to_GPU(sun){
 	gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER, flatten(sun_points), gl.STATIC_DRAW);
 	gl.vertexAttribPointer( ATTRIBUTE_position, 3, gl.FLOAT, false, 0, 0 );
-		//normals
-		gl.bindBuffer( gl.ARRAY_BUFFER, normalBuffer);
-		gl.bufferData( gl.ARRAY_BUFFER, flatten(sun_normals), gl.STATIC_DRAW );
-		gl.vertexAttribPointer( ATTRIBUTE_normal, 3, gl.FLOAT, false, 0, 0 );
+	//normals
+	gl.bindBuffer( gl.ARRAY_BUFFER, normalBuffer);
+	gl.bufferData( gl.ARRAY_BUFFER, flatten(sun_normals), gl.STATIC_DRAW );
+	gl.vertexAttribPointer( ATTRIBUTE_normal, 3, gl.FLOAT, false, 0, 0 );
 
-		//lighting
+	//lighting
 	gl.uniform3fv( UNIFORM_lightPosition, flatten(sun_values.lightPosition) );
 	gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(sun_values.projection));
 		ambientProduct = mult(sun.lightAmbient, sun.materialAmbient);
