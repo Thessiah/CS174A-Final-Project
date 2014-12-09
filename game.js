@@ -124,6 +124,7 @@ var rulesetTexture;
 var deadTexture2;
 var deadscoreTexture;
 var enemyTexture;
+var fillerTexture;
 
 var x_test = 1.0;
 var y_test = 1.0;
@@ -793,6 +794,21 @@ function menuTextures() //generate textures for menus
     }
 
 	deadTexture2.image.src = "./Images/death2.jpg";
+
+	fillerTexture = gl.createTexture();
+    fillerTexture.image = new Image();
+    fillerTexture.image.onload = function(){
+	gl.bindTexture(gl.TEXTURE_2D, fillerTexture);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, fillerTexture.image);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	gl.generateMipmap(gl.TEXTURE_2D);
+	gl.bindTexture(gl.TEXTURE_2D, null);
+    }
+	
+    fillerTexture.image.src = "./Images/HUDfiller.jpg";
 
 	canvasTexture = gl.createTexture();
     	gl.bindTexture(gl.TEXTURE_2D, canvasTexture);
@@ -1466,6 +1482,23 @@ function render()
 
 		 gl.activeTexture(gl.TEXTURE0);
 		 gl.bindTexture(gl.TEXTURE_2D, grenTexture);
+
+		 gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
+		 gl.uniform1f(UNIFORM_shininess,  shininess);
+		 gl.uniform1i(UNIFORM_sampler, 0);
+		 gl.uniform1f(UNIFORM_useTexture,  useTexture);
+
+		 gl.drawArrays( gl.TRIANGLES, 0, 8);
+
+		 mvMatrix = viewMatrix;
+		 mvMatrix = mult(mvMatrix, scale(2, 1, 1));
+		 mvMatrix = mult(translate(1.0, -1.5, 0), mvMatrix);
+
+		 gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(mvMatrix));
+		 gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(orthoMatrix));
+
+		 gl.activeTexture(gl.TEXTURE0);
+		 gl.bindTexture(gl.TEXTURE_2D, fillerTexture);
 
 		 gl.uniform3fv(UNIFORM_lightPosition,  flatten(lightPosition));
 		 gl.uniform1f(UNIFORM_shininess,  shininess);
