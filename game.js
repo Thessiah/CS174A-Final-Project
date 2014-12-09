@@ -516,7 +516,6 @@ function kill_grenade(i)
 	material_grenades.splice(i, 1);
 	AABB_grenades.splice(i, 1);
 	num_grenades--;
-ada
 }
 
 function spawn_enemy()//spawn an enemy with random movement
@@ -1726,9 +1725,28 @@ function render()
 		enemy_health = 1 + level / 2;
 	}
 	
-	if(time >= 15.0 * level)
+	if(time >= 30.0 * level)
 	{
 		level++;
+		player_health += 25;
+		grenAmount += 1;
+		drawText();
+		drawText2();
+		canvasTexture = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, canvasTexture);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, document.getElementById('textureCanvas'));
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+		gl.generateMipmap(gl.TEXTURE_2D);
+		gl.bindTexture(gl.TEXTURE_2D, null);
+
+		grenTexture = gl.createTexture();
+		gl.bindTexture(gl.TEXTURE_2D, grenTexture);
+		gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, document.getElementById('textureCanvas2'));
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+		gl.generateMipmap(gl.TEXTURE_2D);
+		gl.bindTexture(gl.TEXTURE_2D, null);
 		lightAmbient = vec4(Math.random(), Math.random(), Math.random(), 1.0);
       	materialAmbient = vec4(Math.random(), Math.random(), Math.random(), 1.0);
 	}
