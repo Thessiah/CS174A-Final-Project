@@ -51,7 +51,7 @@ var up = vec3(0, 1, 0);
 var s = 11;
 var t = 5;
 
-var scale_enemies = vec3(0.2, 0.2, 0.2);
+var scale_enemies = vec3(0.2, 0.2, 0.0000000001);
 var scale_skybox = vec3(s, s, s);
 var translate_gun = vec3(0.0, 0.0, 1.7);
 var translate_enemies = [];
@@ -96,12 +96,12 @@ var AABB_grenades = [];
 
 var translate_player = vec3(0, 0, 0);
 
-var translate_skybox = [vec3(s, 0, 0),
-			vec3(-s, 0, 0),
-			vec3(0, 0, 0),
-			vec3(0, t, 0),
-			vec3(0, 0, 0),
-			vec3(0, 0, -s)];
+var translate_skybox = [vec3(s, 0, -2),
+			vec3(-s, 0, -2),
+			vec3(0, 0, -2),
+			vec3(0, t, -2),
+			vec3(0, 0, -2),
+			vec3(0, 0, -s - 2)];
 var skybox_PX;
 var skybox_NX;
 var skybox_PY;
@@ -122,6 +122,7 @@ var deadTexture;
 var rulesetTexture;
 var deadTexture2;
 var deadscoreTexture;
+var enemyTexture;
 
 var x_test = 1.0;
 var y_test = 1.0;
@@ -251,6 +252,21 @@ window.onload = function init()
 	//SKYBOX
 	skybox_texture();
 	menuTextures();
+
+	enemyTexture = gl.createTexture();
+	enemyTexture.image = new Image();
+    enemyTexture.image.onload = function(){
+	gl.bindTexture(gl.TEXTURE_2D, enemyTexture);
+	gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, enemyTexture.image);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	gl.generateMipmap(gl.TEXTURE_2D);
+	gl.bindTexture(gl.TEXTURE_2D, null);
+    }
+	
+	enemyTexture.image.src = "./Images/enemy_defuse.png";
 		
     var program = initShaders( gl, "vertex-shader", "fragment-shader" );
     gl.useProgram( program );
@@ -1502,13 +1518,18 @@ function render()
 		ctm = mult(ctm, translate(add(translate_player, translate_enemies[i])));
 		ctm = mult(ctm, scale(scale_enemies));
 		
-		ctm = mult(ctm, rotate(time*omega, [2, 3, 1]));
+		//ctm = mult(ctm, rotate(time*omega, [2, 3, 1]));
 
 		gl.uniformMatrix4fv(UNIFORM_mvMatrix, false, flatten(ctm));
 		gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(projectionMatrix));
 		
 		// gl.activeTexture(gl.TEXTURE0);
         // gl.bindTexture(gl.TEXTURE_2D, myTexture);
+
+		gl.activeTexture(gl.TEXTURE0);
+        gl.bindTexture(gl.TEXTURE_2D, enemyTexture);
+
+		useTexture = 1.0;
 	
 		gl.uniform4fv(UNIFORM_ambientProduct,  flatten(ambientProduct));
 		gl.uniform4fv(UNIFORM_diffuseProduct,  flatten(diffuseProduct));
@@ -1517,6 +1538,8 @@ function render()
 		gl.uniform1f(UNIFORM_shininess,  shininess);
 		//gl.uniform1i(UNIFORM_sampler, 0);
 		gl.uniform1f(UNIFORM_useTexture,  useTexture);
+
+		useTexture = 0.0;
 
 		gl.drawArrays( gl.TRIANGLES, 0, 36);
 		AABB_enemies_prev[i] = AABB_enemies[i];
