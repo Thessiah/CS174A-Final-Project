@@ -1988,7 +1988,7 @@ function setup_sun(sun){
 	var translate_z = -30;
 	var translationMatrix = translate(translate_x, translate_y, translate_z);
 
-	if (sun.sun_theta >= 360)
+	if (sun.sun_theta >= 180)
 		sun.sun_theta = 0;
 	sun.sun_theta += 0.1;
 	var rotationMatrix = rotate(sun.sun_theta, vec3(0, 0, 1));
