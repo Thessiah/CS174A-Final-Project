@@ -13,7 +13,7 @@ During the game, you can move the camera by moving the mouse around the canvas. 
 When your health is 0 or below, a screen appears showing a
 message with your final score. Again, you don't get any other chances, because this is life and death, man.
 
-As the game progresses, the levels increase which cause the enemies to gain health, deal more damage, but also grant higher score values. At the same time, you will gain a minimal amount of health and a grenade as the levels pass. The passage of the sun from east to west indicates the progress through the level.
+As the game progresses, the levels increase which cause the enemies to gain health, deal more damage, but also grant higher score values. At the same time, you will gain a minimal amount of health and a grenade as the levels pass. The passage of the sun from east to west indicates the progress through the level. The level gets darker and brighter depending on the position of the sun.
 
 ADVANCED TOPICS
 
