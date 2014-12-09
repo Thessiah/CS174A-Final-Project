@@ -174,7 +174,7 @@ var sun_texCoordsArray = [];
 generateSun(4, 0, sun_points, sun_normals, sun_texCoordsArray);
 
 var sun_g = [];
-var green = 0.3;
+var green = 0.0;
 for (var i = 0; i < 360; i++){
 	if (i < 90 || (i > 180 && i < 270))
 		green+= 0.01;
@@ -188,7 +188,7 @@ var sun_values={
 	lightPosition: vec3(0.0, 0.0, 0.0),
 	ctm: mat4(),
 	lm: mat4(),
-	sun_theta: 0.0,
+	sun_theta: 45,
 	sun_green: sun_g,
 	materialAmbient: vec4( 1.0, 0.3, 0.0, 1.0 ),
 	materialDiffuse: vec4( 1.0, 0.3, 0.0, 1.0 ),
@@ -204,7 +204,7 @@ var sun_values={
 var darkenSky = [];
 var dark_value = 0.01;
 for (var i = 0; i < 360; i++){
-	if (i < 36 || i > 180-36)
+	if (i < 45 || i > 180-45)
 		dark_value = 0.01;
 	else if (i < 90)
 		dark_value = Math.min(1.0, (dark_value+0.02));
@@ -2073,6 +2073,29 @@ function setup_sun(sun){
 	sun.materialDiffuse = vec4( 1.0, sun.sun_green[Math.floor(sun.sun_theta)%360], 0.0, 1.0 );
 	sun.materialSpecular = vec4( 1.0, sun.sun_green[Math.floor(sun.sun_theta)%360], 0.0, 1.0 );
 
+
+
+	var scaleMatrix = scale(0.5, 0.5, 0.5);
+
+	var translate_x = 20;
+	var translate_y = 0;
+	var translate_z = -12;
+	var translationMatrix = translate(translate_x, translate_y, translate_z);
+
+	if (sun.sun_theta >= 180)
+		sun.sun_theta = 45;
+	sun.sun_theta += 0.05;
+	var rotationMatrix = rotate(sun.sun_theta, vec3(0, 0, 1));
+
+	var ctm = mat4();
+	ctm = mult(scaleMatrix, ctm);
+	ctm = mult(translationMatrix, ctm);
+	ctm = mult(rotationMatrix, ctm);
+	ctm = mult(translate(translate_player[0], -17, 0), ctm);
+	ctm = mult(rotate(degree, vec3(0, 1, 0)), ctm);
+	sun.ctm = ctm;
+
+/*
 	var translate_x = 11;
 	var translate_y = 0;
 	var translate_z = -30;
@@ -2089,14 +2112,14 @@ function setup_sun(sun){
 	ctm = mult(translate(translate_player[0], -4, 0), ctm);
 	ctm = mult(rotate(degree, vec3(0, 1, 0)), ctm);
 	sun.ctm = ctm;
-
-	if (sun.sun_theta < 180 && sun.sun_theta > 35.9){
+*/
+	if (sun.sun_theta < 180 && sun.sun_theta > 45){
 		//slowly increase diffuse to 0.6
 		sun.diffuse = Math.min(0.6, sun.diffuse+0.01);
 		//slowly increase specular to 1.0
 		sun.spec = Math.min(1.0, sun.spec+0.01);
 	}
-	else if (sun.sun_theta >= 180-35.9){
+	else if (sun.sun_theta >= 180-45){
 		//slowly decrease diffuse and specular to 0.3
 		sun.diffuse = Math.max(0.3, sun.diffuse-0.01);
 		sun.spec = Math.max(0.3, sun.spec-0.01);
@@ -2110,7 +2133,7 @@ function setup_sun(sun){
 	var lm = mat4();
 	lm = mult(translationMatrix, lm);
 	lm = mult(rotationMatrix, lm);
-	lm = mult(translate(translate_player[0], -4, 0), lm);
+	lm = mult(translate(translate_player[0], -17, 0), lm);
 	lm = mult(rotate(degree, vec3(0, 1, 0)), lm);
 	sun_values.lm = lm;
 }
