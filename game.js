@@ -73,7 +73,7 @@ var speed_bullets = vec3(.5, .5, .5);
 var scale_bullets = vec3(.05, .05, .05);
 var num_bullets = 0;
 var bullet_damage = 2;
-var material_bullet = vec4(0.2, 0.2, 0.2, 1.0);
+var material_bullet = vec4(1.0, 1.0, 1.0, 1.0);
 var light_bullet = vec4(1.0, 1.0, 1.0, 1.0);
 var AABB_bullets = [];
 
@@ -1156,7 +1156,7 @@ function render_Skybox_Textures()
 	
 		//Skybox Right Side
 		ctm = mult(ctm, viewMatrix);
-		ctm = mult(ctm, translate(add(translate_player, translate_skybox[0])));
+		ctm = mult(ctm, translate(translate_skybox[0]));
 		ctm = mult(ctm, scale(scale_skybox));
 		
 		ctm = mult(ctm, rotate(90, vec3(0, -1, 0)));
@@ -1183,7 +1183,7 @@ function render_Skybox_Textures()
 		//Skybox left Side
 		ctm = mat4();
 	   	ctm = mult(ctm, viewMatrix);
-		ctm = mult(ctm, translate(add(translate_player, translate_skybox[1])));
+		ctm = mult(ctm, translate(translate_skybox[1]));
 		ctm = mult(ctm, scale(scale_skybox));
 		
 		ctm = mult(ctm, rotate(90, [0, 1, 0]));
@@ -1208,7 +1208,7 @@ function render_Skybox_Textures()
 		//Skybox Top Side
 		ctm = mat4();
 		ctm = mult(ctm, viewMatrix);
-		ctm = mult(ctm, translate(add(translate_player, translate_skybox[2])));
+		ctm = mult(ctm, translate(translate_skybox[2]));
 		ctm = mult(ctm, scale(scale_skybox));
 		
 		ctm = mult(ctm, rotate(90, [-1, 0, 0]));
@@ -1233,7 +1233,7 @@ function render_Skybox_Textures()
 		//Skybox Bottom Side
 		ctm = mat4();
 		ctm = mult(ctm, viewMatrix);
-		ctm = mult(ctm, translate(add(translate_player, translate_skybox[3])));
+		ctm = mult(ctm, translate(translate_skybox[3]));
 		//ctm = mult(ctm, scale(vec3(s,s,35)));
 		ctm = mult(ctm, scale(scale_skybox));
 		
@@ -1263,7 +1263,7 @@ function render_Skybox_Textures()
 		//Skybox front Side
 		ctm = mat4();
 		ctm = mult(ctm, viewMatrix);
-		ctm = mult(ctm, translate(add(translate_player, translate_skybox[4])));
+		ctm = mult(ctm, translate(translate_skybox[4]));
 		ctm = mult(ctm, scale(scale_skybox));
 		ctm = mult(rotate(degree, vec3(0, 1, 0)), ctm);
 		
@@ -1288,7 +1288,7 @@ function render_Skybox_Textures()
 		//Skybox Back Side
 		ctm = mat4();
 		ctm = mult(ctm, viewMatrix);
-		ctm = mult(ctm, translate(add(translate_player, translate_skybox[5])));
+		ctm = mult(ctm, translate(translate_skybox[5]));
 		ctm = mult(ctm, scale(scale_skybox));
 		ctm = mult(rotate(degree, vec3(0, 1, 0)), ctm);
 		
@@ -1996,8 +1996,7 @@ function setup_sun(sun){
 	var ctm = mat4();
 	ctm = mult(translationMatrix, ctm);
 	ctm = mult(rotationMatrix, ctm);
-	ctm = mult(translate(translate_player[0], -4, 0), ctm);
-	ctm = mult(rotate(degree, vec3(0, 1, 0)), ctm);
+	ctm = mult(translate(0, -4, 0), ctm);
 	sun.ctm = ctm;
 
 	if (sun.sun_theta < 180 && sun.sun_theta > 35.9){
@@ -2020,8 +2019,7 @@ function setup_sun(sun){
 	var lm = mat4();
 	lm = mult(translationMatrix, lm);
 	lm = mult(rotationMatrix, lm);
-	lm = mult(translate(translate_player[0], -4, 0), lm);
-	lm = mult(rotate(degree, vec3(0, 1, 0)), lm);
+	lm = mult(translate(0, -4, 0), lm);
 	sun_values.lm = lm;
 }
 function load_sun_to_GPU(sun){
@@ -2029,12 +2027,12 @@ function load_sun_to_GPU(sun){
 	gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
 	gl.bufferData(gl.ARRAY_BUFFER, flatten(sun_points), gl.STATIC_DRAW);
 	gl.vertexAttribPointer( ATTRIBUTE_position, 3, gl.FLOAT, false, 0, 0 );
-	//normals
-	gl.bindBuffer( gl.ARRAY_BUFFER, normalBuffer);
-	gl.bufferData( gl.ARRAY_BUFFER, flatten(sun_normals), gl.STATIC_DRAW );
-	gl.vertexAttribPointer( ATTRIBUTE_normal, 3, gl.FLOAT, false, 0, 0 );
+		//normals
+		gl.bindBuffer( gl.ARRAY_BUFFER, normalBuffer);
+		gl.bufferData( gl.ARRAY_BUFFER, flatten(sun_normals), gl.STATIC_DRAW );
+		gl.vertexAttribPointer( ATTRIBUTE_normal, 3, gl.FLOAT, false, 0, 0 );
 
-	//lighting
+		//lighting
 	gl.uniform3fv( UNIFORM_lightPosition, flatten(sun_values.lightPosition) );
 	gl.uniformMatrix4fv(UNIFORM_pMatrix, false, flatten(sun_values.projection));
 		ambientProduct = mult(sun.lightAmbient, sun.materialAmbient);
