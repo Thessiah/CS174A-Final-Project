@@ -1,3 +1,10 @@
+Team #17
+Jeffrey Shu
+Gagik Matevosyan
+Emanuel Rivera Castro
+Rebecca Therese Pinto Hubeny
+Kevin Zuo
+
 RUNNING THE PROJECT
 
 We opened the file game.html in chrome using the --allow-file-access-from-files option.
@@ -21,10 +28,10 @@ ADVANCED TOPICS
 	Normal mapping is applied to the floor of the environment.
 
 2)PHYSICS
-	Physics is used to determine the trajectory and bouncing 	of the grenade.
+	Physics is used to determine the trajectory and bouncing of the grenade.
 
 3)COLLISION DETECTION
-	AABB collision detection has been impelmented to determine 	if the bullets or grenade explosion have hit enemies and 	also to tell if enemies have collided to allow them to 	bounce off of each other. There is also collision 	detection between the grenade and the ground.
+	AABB collision detection for a bounding cube has been implemented to determine if the bullets or grenade explosion have hit enemies and 	also to tell if enemies have collided to allow them to 	bounce off of each other. There is also collision detection between the grenade and the ground. Up until very recently everything was supposed to be a cube so the collision was implemented for a cube instead of a sphere.
 
 
 EXPERIENCE
